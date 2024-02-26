@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <can.h>
 
 void setup() {
     //初始化GPIO
@@ -6,7 +7,7 @@ void setup() {
     //初始化串口，Serial1: D0(RX) D1(TX)
     Serial1.begin(115200);
     //初始化CAN通信，CAN Transceiver: D13(CANRX0) D10(CANTX0)
-
+    CAN_Init();
     //初始化电机PWM
 
     //初始化电机编码器
