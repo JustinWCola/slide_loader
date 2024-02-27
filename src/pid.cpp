@@ -10,16 +10,18 @@
  */
 float Pid::calc(float target, float input)
 {
-    //传递并计算误差值
+    //传递目标与输入值
     target_now = target;
     input_now = input;
-//    error_prev = error_last;    //位置式PID不需要
-    _error_last = _error_now;
-    _error_now = target_now - input_now;
 
     //各种优化算法
     if (_pid_mode == PID_RAMP)
         ramp();
+
+    //计算误差值
+//    error_prev = error_last;    //位置式PID不需要
+    _error_last = _error_now;
+    _error_now = target_now - input_now;
 
     //在精准度范围内，可认为已到达目标值
     if (_error_now < _precision && _error_now > -_precision)

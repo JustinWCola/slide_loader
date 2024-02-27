@@ -12,7 +12,7 @@ void setup() {
 //    CAN_Init();
     //初始化电机编码器, D2(A相) D3(B相)
     ENCODER_Init();
-    //初始化电机PWM，D9(CW) D10(CCW)
+    //初始化电机PWM，D7(CW) D8(CCW) D9(PWM)
     MOTOR_Init();
 }
 
@@ -26,7 +26,8 @@ void loop() {
      * 4.检测是否为空，连续两次为空视为扫描完成
      * 5.发送扫描完成信号
      * */
-    MOTOR_SetPower(0);
-    Serial1.println(encoder_count);
+//    MOTOR_SetPower(0);
+//    MOTOR_Update(1100);
+//    Serial1.println(encoder_count);
 }
 
