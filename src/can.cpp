@@ -7,7 +7,7 @@ static uint32_t const CAN_ID = 0x20;
 
 void CAN_Init()
 {
-    if (!CAN.begin(CanBitRate::BR_250k))
+    if (!CAN.begin(CanBitRate::BR_1000k))
     {
         Serial1.println("CAN.begin(...) failed.");
         for (;;) {}

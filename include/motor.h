@@ -9,7 +9,7 @@
 #define MOTOR_CCW 8
 #define MOTOR_PWM 9
 
-#define MOTOR_RATIO 150
+#define MOTOR_RATIO 105
 
 void MOTOR_Init();
 void MOTOR_SetPower(int power);
