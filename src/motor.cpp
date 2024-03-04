@@ -7,16 +7,6 @@
 #include <pid.h>
 #include "encoder.h"
 
-/* TB6612驱动接线:
- * AIN1-CW
- * AIN2-CCW
- * PWMA-PWM
- * STBY-5V
- * GND-GND
- * AOUT1-M1
- * AOUT2-M2
- * */
-
 Pid motor_pid(1, 0, 0.5);
 
 void MOTOR_Init()
