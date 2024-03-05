@@ -29,6 +29,7 @@
 #define REV_VEL     0x4F    //相对位置模式,非立刻更新
 #define REV_VEL_RT  0x6F    //相对位置模式,立刻更新
 
+void SERVO_Test();
 void SERVO_SetCtrlMode(uint8_t id, uint32_t ctrl_mode);
 void SERVO_SetMoveMode(uint8_t id, uint32_t move_mode);
 void SERVO_SetPos(uint8_t id, uint32_t pos);

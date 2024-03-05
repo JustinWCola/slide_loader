@@ -16,11 +16,11 @@ void setup() {
     //初始化电机PWM，D7(CW) D8(CCW) D9(PWM)
     MOTOR_Init();
 
-    SERVO_SetCtrlMode(1,CiA402);
-    SERVO_SetMoveMode(1,PP);
-    SERVO_SetPos(1,10000);
-    SERVO_Enable(1);
-    SERVO_SetRunMode(1,ABS_POS_RT);
+//    SERVO_SetCtrlMode(1,CiA402);
+//    SERVO_SetMoveMode(1,PP);
+//    SERVO_SetPos(1,10000);
+//    SERVO_Enable(1);
+//    SERVO_SetRunMode(1,ABS_POS_RT);
 }
 
 void loop() {
@@ -36,7 +36,7 @@ void loop() {
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 
-
+    SERVO_Test();
 //    Serial1.println(encoder_count);
 }
 
