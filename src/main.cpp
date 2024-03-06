@@ -2,6 +2,7 @@
 #include <encoder.h>
 #include <motor.h>
 #include <can.h>
+#include <canopen.h>
 #include <servo.h>
 
 void setup() {
@@ -10,7 +11,8 @@ void setup() {
     //初始化串口, Serial1: D0(RX) D1(TX)
     Serial1.begin(115200);
     //初始化CAN通信, CAN Transceiver: D13(CANRX0) D10(CANTX0)
-    CAN_Init();
+//    CAN_Init();
+    myCAN.begin();
     //初始化电机编码器, D2(A相) D3(B相)
     ENCODER_Init();
     //初始化电机PWM，D7(CW) D8(CCW) D9(PWM)
@@ -36,7 +38,7 @@ void loop() {
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 
-    SERVO_Test();
+    myCAN.receiveCanMsg();
 //    Serial1.println(encoder_count);
 }
 
