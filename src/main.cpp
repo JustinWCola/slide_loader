@@ -12,7 +12,7 @@ void setup() {
     Serial1.begin(115200);
     //初始化CAN通信, CAN Transceiver: D13(CANRX0) D10(CANTX0)
 //    CAN_Init();
-    myCAN.begin();
+    myCAN.begin(CanBitRate::BR_1000k);
     //初始化电机编码器, D2(A相) D3(B相)
     ENCODER_Init();
     //初始化电机PWM，D7(CW) D8(CCW) D9(PWM)
@@ -38,7 +38,7 @@ void loop() {
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 
-    myCAN.receiveCanMsg();
+    myCAN.recvMsg();
 //    Serial1.println(encoder_count);
 }
 

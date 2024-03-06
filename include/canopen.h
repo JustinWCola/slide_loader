@@ -32,6 +32,7 @@
 //       8Bit  16Bit 32Bit
 // write 0x2F  0x2B  0x23
 // read  0x4F  0x4B  0x43
+
 #define SDO_REQUEST_READ 0x40
 #define SDO_REQUEST_WRITE_8BIT 0x2F
 #define SDO_REQUEST_WRITE_16BIT 0x2B
@@ -47,30 +48,24 @@
 class CANopen
 {
 public:
-    CANopen(){}
-    void begin();
-    uint8_t read(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t *data);
-    uint8_t read(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t *data);
+    CANopen(){};
+
+    uint8_t begin(CanBitRate can_bitrate);
     uint8_t read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data);
+    uint8_t write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data, uint8_t len);
 
-    uint8_t write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t data);
-    uint8_t write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data);
-    uint8_t write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data);
-
-    void composeMsg(uint8_t type_byte, uint16_t index,uint8_t sub_index);
-    uint8_t receiveCanMsg();
-    uint8_t sendCanBuffer(uint16_t id, uint8_t length);
+    uint8_t formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index);
+    uint8_t sendMsg(uint16_t id, uint8_t length);
+    uint8_t recvMsg();
 
     // NMT Messages: special message functions
-    uint8_t startOperational(uint8_t id=DEFAULT_NODE_ID);
-    uint8_t resetNode(uint8_t id=DEFAULT_NODE_ID);
-    uint8_t sendSyncMsg(uint8_t id=DEFAULT_NODE_ID);
-
-    uint8_t readCanBus();
+    uint8_t startOperational(uint8_t id);
+    uint8_t resetNode(uint8_t id);
+    uint8_t sendSyncMsg(uint8_t id);
 
 private:
-    static uint8_t can_msg_buffer[8];
-    static uint8_t can_receive_buffer[8];
+    static uint8_t send_msg_buffer[8];
+    static uint8_t recv_msg_buffer[8];
 };
 
 extern CANopen myCAN;
