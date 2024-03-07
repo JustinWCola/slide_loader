@@ -9,9 +9,6 @@
 
 #define CAN_RECEIVE_TIMEOUT_MS 100  //CAN接收超时时间
 
-#define SUCCESS 1
-#define FAILURE 0
-
 // 服务数据对象(SDO)
 // ------------------------------------
 #define SDO_COMMAND_ID_BASE 0x600
@@ -39,20 +36,20 @@ class CANopen
 public:
     CANopen(){};
 
-    uint8_t begin(CanBitRate can_bitrate);
-    uint8_t read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data);
-    uint8_t write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t data);
-    uint8_t write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data);
-    uint8_t write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data);
+    bool begin(const CanBitRate can_bitrate);
+    bool read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data);
+    bool write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t data);
+    bool write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data);
+    bool write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data);
 
-    uint8_t formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index);
-    uint8_t sendMsg(uint16_t id, uint8_t length);
+    bool formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index);
+    bool sendMsg(uint16_t id, uint8_t length);
     uint8_t recvMsg();
 
     // NMT Messages: special message functions
-    uint8_t startOperational(uint8_t id);
-    uint8_t resetNode(uint8_t id);
-    uint8_t sendSyncMsg(uint8_t id);
+    bool startOperational(uint8_t id);
+    bool resetNode(uint8_t id);
+    bool sendSyncMsg(uint8_t id);
 
     uint32_t can_id;
 private:

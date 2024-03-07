@@ -8,7 +8,7 @@ CANopen myCAN;
 uint8_t CANopen::send_msg_buffer[8]={0};
 uint8_t CANopen::recv_msg_buffer[8]={0};
 
-uint8_t CANopen::begin(CanBitRate const can_bitrate)
+bool CANopen::begin(const CanBitRate can_bitrate)
 {
     if (!CAN.begin(can_bitrate))
     {
@@ -16,42 +16,28 @@ uint8_t CANopen::begin(CanBitRate const can_bitrate)
         for (;;) {}
     }
     Serial1.println("CAN init ok.");
-    return SUCCESS;
+    return true;
 }
 
-uint8_t CANopen::read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data)
+bool CANopen::read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data)
 {
     formMsg(SDO_REQUEST_READ, index, sub_index);
     sendMsg(id + SDO_COMMAND_ID_BASE, 4);
 
-    uint8_t *ptr = (uint8_t*)&data;
-    uint8_t len = 0;
+    uint8_t *ptr = (uint8_t*)data;
+    uint8_t len = recvMsg();
 
-    switch (recvMsg())
+    for (uint8_t i=0; i<4; i++)
     {
-        case SDO_RESPONSE_READ_8BIT:
-            len = 1;
-            break;
-        case SDO_RESPONSE_READ_16BIT:
-            len = 2;
-            break;
-        case SDO_RESPONSE_READ_32BIT:
-            len = 4;
-            break;
-        default:
-            return FAILURE;
-    }
-    for (uint8_t i=0; i<4; i++) {
-        if (i<len) {
+        if (i<len)
             ptr[i] = recv_msg_buffer[4+i]; // fill data bytes
-        } else {
+        else
             ptr[i] = 0x00; // fill the other bytes with 0
-        }
     }
-    return SUCCESS;
+    return true;
 }
 
-uint8_t CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t data)
+bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t data)
 {
     formMsg(SDO_REQUEST_WRITE_8BIT,index,sub_index);
     send_msg_buffer[4] = data;
@@ -60,12 +46,12 @@ uint8_t CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t da
         && recv_msg_buffer[1]==(index&0xFF) \
         && recv_msg_buffer[2]==((index&0xFF00)>>8) \
         && recv_msg_buffer[3]==sub_index)
-        return SUCCESS;
+        return true;
     else
-        return FAILURE;
+        return false;
 }
 
-uint8_t CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data)
+bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data)
 {
     formMsg(SDO_REQUEST_WRITE_16BIT,index,sub_index);
     send_msg_buffer[4] = (uint8_t)data;
@@ -75,12 +61,12 @@ uint8_t CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t d
         && recv_msg_buffer[1]==(index&0xFF) \
         && recv_msg_buffer[2]==((index&0xFF00)>>8) \
         && recv_msg_buffer[3]==sub_index)
-        return SUCCESS;
+        return true;
     else
-        return FAILURE;
+        return false;
 }
 
-uint8_t CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data)
+bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data)
 {
     formMsg(SDO_REQUEST_WRITE_32BIT,index,sub_index);
     send_msg_buffer[4] = (uint8_t)data;
@@ -92,25 +78,26 @@ uint8_t CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t d
         && recv_msg_buffer[1]==(index&0xFF) \
         && recv_msg_buffer[2]==((index&0xFF00)>>8) \
         && recv_msg_buffer[3]==sub_index)
-        return SUCCESS;
+        return true;
     else
-        return FAILURE;
+        return false;
 }
 
-uint8_t CANopen::formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index)
+bool CANopen::formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index)
 {
     send_msg_buffer[0] = type_byte;
     uint8_t *ptr = (uint8_t*)&index;
     send_msg_buffer[1] = ptr[0];
     send_msg_buffer[2] = ptr[1];
     send_msg_buffer[3] = sub_index;
-    return SUCCESS;
+    return true;
 }
 
-uint8_t CANopen::sendMsg(uint16_t id, uint8_t length)
+bool CANopen::sendMsg(uint16_t id, uint8_t length)
 {
     CanMsg const msg(CanStandardId(id), length, send_msg_buffer);
-    return CAN.write(msg);
+    CAN.write(msg);
+    return true;
 }
 
 uint8_t CANopen::recvMsg() {
@@ -118,7 +105,7 @@ uint8_t CANopen::recvMsg() {
     uint32_t startTime = millis();
     while(!CAN.available())
         if ((millis()-startTime)>CAN_RECEIVE_TIMEOUT_MS)
-            return FAILURE; // time out
+            return 0; // time out
     uint8_t len;
     uint8_t id;
     CanMsg const msg = CAN.read();
@@ -129,33 +116,34 @@ uint8_t CANopen::recvMsg() {
         len = msg.data_length;
         memcpy(recv_msg_buffer, msg.data, len);
 
-        Serial1.print(F("Id: "));
-        Serial1.println(can_id,HEX);
-        Serial1.print(F("data: "));
-        for(int i = 0; i<len; i++)
-        {
-            Serial1.print(recv_msg_buffer[i], HEX);
-            Serial1.print(" ");
-        }
+//        Serial1.print(F("Id: "));
+//        Serial1.println(can_id,HEX);
+//        Serial1.print(F("data: "));
+//        for(int i = 0; i<len; i++)
+//        {
+//            Serial1.print(recv_msg_buffer[i], HEX);
+//            Serial1.print(" ");
+//        }
 
         // check the type bit, which kind of response it is
-        switch (recv_msg_buffer[0]) {
+        switch (recv_msg_buffer[0])
+        {
             // requested readings for 8,16,32-bit data
             case SDO_RESPONSE_READ_8BIT:
-                return SDO_RESPONSE_READ_8BIT;
+                return 1;
             case SDO_RESPONSE_READ_16BIT:
-                return SDO_RESPONSE_READ_16BIT;
+                return 2;
             case SDO_RESPONSE_READ_32BIT:
-                return SDO_RESPONSE_READ_32BIT;
+                return 4;
                 // confirmation of successful write
             case SDO_RESPONSE_WRITE:
                 return SDO_RESPONSE_WRITE;
             case SDO_ERROR_CODE: // fall through error
+                return SDO_ERROR_CODE;
 //                Serial1.println(F("\nERROR"));
 //                Serial1.print(F("Error Message is: "));
 //                for (uint8_t i=0; i<len; i++)
 //                    Serial1.print(recv_msg_buffer[i], HEX);
-                break;
             case 0:
                 //PDO message
 //                Serial1.println(F("\nPDO Msg received"));
@@ -167,38 +155,38 @@ uint8_t CANopen::recvMsg() {
                 break;
         } // switch type_bit
     } // while msg received
-    return SUCCESS;
+    return 0;
 }
 
-uint8_t CANopen::startOperational(uint8_t id)
+bool CANopen::startOperational(uint8_t id)
 {
     //进入操作状态指令
     send_msg_buffer[0] = 0x01; //NMT Msg
     send_msg_buffer[1] = id;
     sendMsg(0x000,2);
-    while (recvMsg()!=SUCCESS)
+    while (!recvMsg())
         Serial1.println("starting operational.");
-    return SUCCESS;
+    return true;
 }
 
-uint8_t CANopen::resetNode(uint8_t id)
+bool CANopen::resetNode(uint8_t id)
 {
     //rest application on the node
     send_msg_buffer[0] = 0x81; //NMT Msg
     send_msg_buffer[1] = id;
     sendMsg(0x0000,2);
-    while (recvMsg()!=SUCCESS)
+    while (!recvMsg())
         Serial1.println("resetting node.");
-    return SUCCESS;
+    return true;
 }
 
-uint8_t CANopen::sendSyncMsg(uint8_t id)
+bool CANopen::sendSyncMsg(uint8_t id)
 {
     //synchronous CANopen device
     send_msg_buffer[0] = 0x00; //NMT Msg
     send_msg_buffer[1] = id;
     sendMsg(0x0000,2);
-    while (recvMsg()!=SUCCESS)
+    while (!recvMsg())
         Serial1.println("sending sync msg.");
-    return SUCCESS;
+    return true;
 }

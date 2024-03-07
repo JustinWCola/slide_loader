@@ -9,6 +9,9 @@ Servo myServo;
 uint8_t Servo::id = 1;
 CANopen Servo::can = CANopen();
 
+/**
+ * 初始化函数
+ */
 void Servo::init()
 {
     can.begin(CanBitRate::BR_1000k);
@@ -21,47 +24,75 @@ void Servo::init()
     enableMotor();
 }
 
+/**
+ * 切换控制模式
+ * @param ctrl_mode
+ * @return true
+ */
 bool Servo::setCtrlMode(eCtrlMode ctrl_mode)
 {
-    can.write(id, I_CTRL_PARAM, SI_CTRL_MODE, ctrl_mode);
+    can.write(id, I_CTRL_PARAM, SI_CTRL_MODE, (uint16_t)ctrl_mode);
     uint16_t new_mode = 0;
     do
     {
         can.read(id,I_CTRL_PARAM,SI_CTRL_MODE,(uint32_t*)&new_mode);
         new_mode = (uint16_t)new_mode;
-        Serial1.println("setting ctrl mode");
+        Serial1.println("setting ctrl mode.");
     } while(new_mode != ctrl_mode);
     return true;
 }
 
+/**
+ * 切换运动模式
+ * @param motion_mode
+ * @return true
+ */
 bool Servo::setMotionMode(eMotionMode motion_mode)
 {
-    can.write(id,I_MOTION_MODE,0,motion_mode);
+    can.write(id,I_MOTION_MODE,0,(uint8_t)motion_mode);
     uint8_t new_mode = 0;
     do
     {
         can.read(id,I_MOTION_MODE,0,(uint32_t*)&new_mode);
         new_mode = (uint8_t)new_mode;
-        Serial1.println("setting motion mode");
+        Serial1.println("setting motion mode.");
     } while(new_mode != motion_mode);
     return true;
 }
 
+/**
+ * 电机准备
+ */
 void Servo::setMotorReady()
 {
     can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x06);
+    Serial1.println("motor ready.");
 }
 
+/**
+ * 电机失能
+ */
 void Servo::disableMotor()
 {
     can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x07);
+    Serial1.println("motor disable.");
 }
 
+/**
+ * 电机使能
+ */
 void Servo::enableMotor()
 {
     can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
+    Serial1.println("motor enable.");
 }
 
+/**
+ * 设置目标点
+ * @param position 目标位置
+ * @param velocity 轮廓速度
+ * @return true
+ */
 bool Servo::setPoint(int32_t position, uint32_t velocity)
 {
     can.write(id, I_TARGET_POSITION,0,(uint32_t)position);
@@ -70,12 +101,11 @@ bool Servo::setPoint(int32_t position, uint32_t velocity)
 //    can.write(id,I_PROFILE_ACCELERATION,0,acc);
 //    can.write(id,I_PROFILE_DECELERATION,0,dec);
 
-    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x2F);
-    uint16_t status = 0;
-    do {
-        can.read(id, I_STATUS_WORD, 0, (uint32_t*)&status);
-    } while ((status&0x1000)!=0x1000);
-    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x3F);
-    return true;
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x1F);
 
+    Serial1.print("setting point:");
+    Serial1.print(position);
+    Serial1.println(".");
+    return true;
 }
