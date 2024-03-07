@@ -1,74 +1,81 @@
 //
 // Created by JustinWCola on 2024/2/29.
 //
-#include <can.h>
+#include <canopen.h>
 #include <servo.h>
 
-void SERVO_Test()
+Servo myServo;
+
+uint8_t Servo::id = 1;
+CANopen Servo::can = CANopen();
+
+void Servo::init()
 {
-    int32_t pos = 5000;
+    can.begin(CanBitRate::BR_1000k);
+    can.read(id, I_DEVICE_TYPE, 0, 0);//你是谁
 
-    uint8_t msg_data[8];
-    msg_data[0] = pos;
-    msg_data[1] = (pos >> 8);
-    msg_data[2] = (pos >> 16);
-    msg_data[3] = (pos >> 24);
-
-    CanMsg const msg(CanStandardId(0x301), sizeof(msg_data), msg_data);
-    CAN.write(msg);
+    setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
+    setMotionMode(eMotionMode::PP);//设置为轮廓位置模式
+    setMotorReady();
+    disableMotor();
+    enableMotor();
 }
 
-void SERVO_Send(uint8_t id, uint8_t cmd, uint8_t index, uint8_t sub_index, uint32_t data)
+bool Servo::setCtrlMode(eCtrlMode ctrl_mode)
 {
-    uint8_t msg_data[8];
-    msg_data[0] = cmd;
-    msg_data[1] = index;
-    msg_data[2] = (index >> 8);
-    msg_data[3] = sub_index;
-    memcpy(msg_data + 4, &data, 4);
-
-    CanMsg const msg(CanStandardId(0x600+id), sizeof(msg_data), msg_data);
-    CAN.write(msg);
+    can.write(id, I_CTRL_PARAM, SI_CTRL_MODE, ctrl_mode);
+    uint16_t new_mode = 0;
+    do
+    {
+        can.read(id,I_CTRL_PARAM,SI_CTRL_MODE,(uint32_t*)&new_mode);
+        new_mode = (uint16_t)new_mode;
+        Serial1.println("setting ctrl mode");
+    } while(new_mode != ctrl_mode);
+    return true;
 }
 
-void SERVO_SetCtrlMode(uint8_t id, uint32_t ctrl_mode)
+bool Servo::setMotionMode(eMotionMode motion_mode)
 {
-    SERVO_Send(id, 0x2B, 0x2002, 0x01, ctrl_mode);
+    can.write(id,I_MOTION_MODE,0,motion_mode);
+    uint8_t new_mode = 0;
+    do
+    {
+        can.read(id,I_MOTION_MODE,0,(uint32_t*)&new_mode);
+        new_mode = (uint8_t)new_mode;
+        Serial1.println("setting motion mode");
+    } while(new_mode != motion_mode);
+    return true;
 }
 
-void SERVO_SetMoveMode(uint8_t id, uint32_t move_mode)
+void Servo::setMotorReady()
 {
-    SERVO_Send(id, 0x2F, 0x6060, 0x01, move_mode);
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x06);
 }
 
-void SERVO_SetPos(uint8_t id, uint32_t pos)
+void Servo::disableMotor()
 {
-    SERVO_Send(id, 0x23, 0x607A, 0x00, pos);
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x07);
 }
 
-void SERVO_SetVel(uint8_t id, uint32_t vel)
+void Servo::enableMotor()
 {
-    SERVO_Send(id, 0x23, 0x6081, 0x00, vel);
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
 }
 
-void SERVO_SetDcc(uint8_t id, uint32_t dcc)
+bool Servo::setPoint(int32_t position, uint32_t velocity)
 {
-    SERVO_Send(id, 0x23, 0x6083, 0x00, dcc);
-}
+    can.write(id, I_TARGET_POSITION,0,(uint32_t)position);
+//    can.write(id,I_PROFILE_VELOCITY,0,(uint32_t)velocity);
+//    can.write(id,I_END_VELOCITY,0,0x0);
+//    can.write(id,I_PROFILE_ACCELERATION,0,acc);
+//    can.write(id,I_PROFILE_DECELERATION,0,dec);
 
-void SERVO_SetAcc(uint8_t id, uint32_t acc)
-{
-    SERVO_Send(id, 0x23, 0x6084, 0x00, acc);
-}
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x2F);
+    uint16_t status = 0;
+    do {
+        can.read(id, I_STATUS_WORD, 0, (uint32_t*)&status);
+    } while ((status&0x1000)!=0x1000);
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x3F);
+    return true;
 
-void SERVO_Enable(uint8_t id)
-{
-    SERVO_Send(id, 0x2B, 0x6040, 0x00, 0X06);
-    SERVO_Send(id, 0x2B, 0x6040, 0x00, 0X07);
-    SERVO_Send(id, 0x2B, 0x6040, 0x00, 0X0F);
-}
-
-void SERVO_SetRunMode(uint8_t id, uint32_t run_mode)
-{
-    SERVO_Send(id, 0x2B, 0x6040, 0x00, run_mode);
 }
