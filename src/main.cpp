@@ -41,7 +41,7 @@ void loop()
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 //        myCAN.recvMsg();
-    myServo.setPoint(0,0);
+    myServo.setPoint(0);
     while (1){}
 //    Serial1.println(encoder_count);
 }

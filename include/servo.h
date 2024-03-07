@@ -69,6 +69,7 @@ public:
     void enableMotor();
 
     bool setPoint(int32_t pos, uint32_t vel);
+    bool setPoint(int32_t pos);
 
 private:
     static uint8_t id;

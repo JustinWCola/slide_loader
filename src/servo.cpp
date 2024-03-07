@@ -89,13 +89,13 @@ void Servo::enableMotor()
 
 /**
  * 设置目标点
- * @param position 目标位置
- * @param velocity 轮廓速度
+ * @param pos 目标位置
+ * @param vel 轮廓速度
  * @return true
  */
-bool Servo::setPoint(int32_t position, uint32_t velocity)
+bool Servo::setPoint(int32_t pos, uint32_t vel)
 {
-    can.write(id, I_TARGET_POSITION,0,(uint32_t)position);
+    can.write(id, I_TARGET_POSITION,0,(uint32_t)pos);
 //    can.write(id,I_PROFILE_VELOCITY,0,(uint32_t)velocity);
 //    can.write(id,I_END_VELOCITY,0,0x0);
 //    can.write(id,I_PROFILE_ACCELERATION,0,acc);
@@ -105,7 +105,25 @@ bool Servo::setPoint(int32_t position, uint32_t velocity)
     can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x1F);
 
     Serial1.print("setting point:");
-    Serial1.print(position);
+    Serial1.print(pos);
+    Serial1.println(".");
+    return true;
+}
+
+/**
+ * 设置目标点
+ * @param pos 目标位置
+ * @return true
+ */
+bool Servo::setPoint(int32_t pos)
+{
+    can.write(id, I_TARGET_POSITION,0,(uint32_t)pos);
+
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
+    can.write(id, I_CONTROL_WORD, 0, (uint16_t)0x1F);
+
+    Serial1.print("setting point:");
+    Serial1.print(pos);
     Serial1.println(".");
     return true;
 }
