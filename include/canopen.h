@@ -57,6 +57,4 @@ private:
     static uint8_t recv_msg_buffer[8];
 };
 
-extern CANopen myCAN;
-
 #endif //CANOPEN_H

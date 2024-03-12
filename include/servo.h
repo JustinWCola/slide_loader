@@ -50,16 +50,10 @@ typedef enum eTriggerMode : uint16_t
     RevPosRt        //相对位置模式,立刻更新
 };  //触发模式
 
-//运行模式 Run Mode
-#define ABS_POS     0x0F    //绝对位置模式,非立刻更新
-#define ABS_POS_RT  0x2F    //绝对位置模式,立刻更新
-#define REV_VEL     0x4F    //相对位置模式,非立刻更新
-#define REV_VEL_RT  0x6F    //相对位置模式,立刻更新
-
 class Servo
 {
 public:
-    Servo(){}
+    Servo(CANopen can, uint8_t id):_can(can),_id(id){}
 
     void init();
     bool setCtrlMode(eCtrlMode ctrl_mode);
@@ -72,12 +66,8 @@ public:
     bool setPoint(int32_t pos);
 
 private:
-    static uint8_t id;
-    static CANopen can;
+    uint8_t _id;
+    CANopen _can;
 };
-
-extern Servo myServo;
-
-
 
 #endif //SERVO_H

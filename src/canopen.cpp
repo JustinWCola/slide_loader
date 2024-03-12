@@ -3,8 +3,6 @@
 //
 #include <canopen.h>
 
-CANopen myCAN;
-
 uint8_t CANopen::send_msg_buffer[8]={0};
 uint8_t CANopen::recv_msg_buffer[8]={0};
 
@@ -12,10 +10,10 @@ bool CANopen::begin(const CanBitRate can_bitrate)
 {
     if (!CAN.begin(can_bitrate))
     {
-        Serial1.println("CAN init failed.");
+        Serial1.println("CAN init failed");
         for (;;) {}
     }
-    Serial1.println("CAN init ok.");
+    Serial1.println("CAN init ok");
     return true;
 }
 
@@ -165,7 +163,7 @@ bool CANopen::startOperational(uint8_t id)
     send_msg_buffer[1] = id;
     sendMsg(0x000,2);
     while (!recvMsg())
-        Serial1.println("starting operational.");
+        Serial1.println("starting operational");
     return true;
 }
 
@@ -176,7 +174,7 @@ bool CANopen::resetNode(uint8_t id)
     send_msg_buffer[1] = id;
     sendMsg(0x0000,2);
     while (!recvMsg())
-        Serial1.println("resetting node.");
+        Serial1.println("resetting node");
     return true;
 }
 
@@ -187,6 +185,6 @@ bool CANopen::sendSyncMsg(uint8_t id)
     send_msg_buffer[1] = id;
     sendMsg(0x0000,2);
     while (!recvMsg())
-        Serial1.println("sending sync msg.");
+        Serial1.println("sending sync msg");
     return true;
 }
