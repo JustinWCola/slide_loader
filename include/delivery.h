@@ -14,15 +14,21 @@
 class Delivery
 {
 public:
-    Delivery(CANopen can) : _can(can){}
+    explicit Delivery(CANopen can) : _can(can){}
 
     void init();
-    bool setPoint(int32_t x, int32_t z);
+    bool setAbsPoint(int32_t x, int32_t z);
+    bool setRevPoint(int32_t x, int32_t z);
+
+    bool getAbsPoint();
 
 private:
     CANopen _can;
     Servo _axis_x{_can, 1};
     Servo _axis_z{_can, 2};
+
+    int32_t _pos_x;
+    int32_t _pos_z;
 };
 
 #endif //DELIVERY_H

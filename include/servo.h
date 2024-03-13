@@ -44,10 +44,10 @@ typedef enum eMotionMode : uint8_t
 
 typedef enum eTriggerMode : uint16_t
 {
-    AbsPos = 0,     //绝对位置模式,非立刻更新
-    AbsPosRt,       //绝对位置模式,立刻更新
-    RevPos,         //相对位置模式,非立刻更新
-    RevPosRt        //相对位置模式,立刻更新
+    AbsPos = 0x0F,      //绝对位置模式,非立刻更新
+    AbsPosRt = 0x2F,    //绝对位置模式,立刻更新
+    RevPos = 0x4F,      //相对位置模式,非立刻更新
+    RevPosRt = 0x6F,    //相对位置模式,立刻更新
 };  //触发模式
 
 class Servo
@@ -62,8 +62,12 @@ public:
     void disableMotor();
     void enableMotor();
 
-    bool setPoint(int32_t pos, uint32_t vel);
-    bool setPoint(int32_t pos);
+    bool setAbsPosition(int32_t pos, uint32_t vel);
+    bool setAbsPosition(int32_t pos);
+    bool setRevPosition(int32_t pos, uint32_t vel);
+    bool setRevPosition(int32_t pos);
+
+    int32_t getAbsPosition();
 
 private:
     uint8_t _id;

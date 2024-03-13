@@ -38,8 +38,11 @@ void loop()
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 //    CANOPEN.recvMsg();
-    delivery.setPoint(1000,1000);
-    while (1){}
+    delivery.setAbsPoint(0,0);
+    while (1)
+    {
+        delivery.getAbsPoint();
+    }
 //    Serial1.println(encoder_count);
 }
 

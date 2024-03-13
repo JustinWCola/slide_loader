@@ -87,12 +87,12 @@ void Servo::enableMotor()
 }
 
 /**
- * 设置目标点
- * @param pos 目标位置
+ * 设置绝对目标点
+ * @param pos 绝对目标位置
  * @param vel 轮廓速度
  * @return true
  */
-bool Servo::setPoint(int32_t pos, uint32_t vel)
+bool Servo::setAbsPosition(int32_t pos, uint32_t vel)
 {
     _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
 //    can.write(id,I_PROFILE_VELOCITY,0,(uint32_t)velocity);
@@ -100,8 +100,8 @@ bool Servo::setPoint(int32_t pos, uint32_t vel)
 //    can.write(id,I_PROFILE_ACCELERATION,0,acc);
 //    can.write(id,I_PROFILE_DECELERATION,0,dec);
 
-    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
-    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x1F);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
 
 //    Serial1.print("setting point:");
 //    Serial1.print(pos);
@@ -109,18 +109,68 @@ bool Servo::setPoint(int32_t pos, uint32_t vel)
 }
 
 /**
- * 设置目标点
- * @param pos 目标位置
+ * 设置绝对目标点
+ * @param pos 绝对目标位置
  * @return true
  */
-bool Servo::setPoint(int32_t pos)
+bool Servo::setAbsPosition(int32_t pos)
 {
     _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
 
-    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
-    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x1F);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
 
 //    Serial1.print("setting point:");
 //    Serial1.print(pos);
     return true;
+}
+
+/**
+ * 设置相对目标点
+ * @param pos 相对目标位置
+ * @param vel 轮廓速度
+ * @return true
+ */
+bool Servo::setRevPosition(int32_t pos, uint32_t vel)
+{
+    _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
+//    can.write(id,I_PROFILE_VELOCITY,0,(uint32_t)velocity);
+//    can.write(id,I_END_VELOCITY,0,0x0);
+//    can.write(id,I_PROFILE_ACCELERATION,0,acc);
+//    can.write(id,I_PROFILE_DECELERATION,0,dec);
+
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::RevPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::RevPos + 0x10));
+
+//    Serial1.print("setting point:");
+//    Serial1.print(pos);
+    return true;
+}
+
+/**
+ * 设置相对目标点
+ * @param pos 相对目标位置
+ * @return true
+ */
+bool Servo::setRevPosition(int32_t pos)
+{
+    _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
+
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::RevPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::RevPos + 0x10));
+
+//    Serial1.print("setting point:");
+//    Serial1.print(pos);
+    return true;
+}
+
+/**
+ * 获取当前绝对位置
+ * @return 当前绝对位置
+ */
+int32_t Servo::getAbsPosition()
+{
+    static int32_t postion;
+    _can.read(_id,0x6064,0,(uint32_t*)&postion);
+    return postion;
 }
