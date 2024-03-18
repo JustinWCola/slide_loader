@@ -2,21 +2,88 @@
 #include <encoder.h>
 #include <motor.h>
 #include <canopen.h>
-#include <servo.h>
 #include <delivery.h>
 #include <led.h>
 #include <key.h>
+#include <queue>
+
+#define X_GAP 1000  //X轴间距
+#define Z_GAP 100   //Z轴间距
+
+#define Z_LIFT 50   //Z轴升降距离
+#define Y_DISTANCE 1000    //Y轴距离
 
 CANopen CANOPEN;
 Delivery delivery(CANOPEN);
 Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 Key key[4]{14,15,16,17};
+std::queue<uint8_t> id_queue;
+
+void keyDetect()
+{
+    for(int i=0;i<4;i++)
+    {
+        if(key[i].getKey()==HIGH)
+        {
+            id_queue.push(i);
+            led[i].setColor(Red);
+        }
+    }
+}
+
+void takeSlide()
+{
+    MOTOR_Update(Y_DISTANCE);//执行机构伸出
+    delivery.setRevPoint(0, Z_LIFT);//向上
+    MOTOR_Update(0);//执行机构收回
+}
+
+void giveSlide()
+{
+    MOTOR_Update(Y_DISTANCE);//执行机构伸出
+    delivery.setRevPoint(0,-Z_LIFT);//向下
+    MOTOR_Update(0);//执行机构收回
+}
+
+void startLoader(uint8_t id)
+{
+    led[id].setColor(Yellow);//开始装载，亮黄灯
+    delivery.setAbsPoint(X_GAP * id + 0, 0);
+    for(int i=0;i<24;i++)
+    {
+        takeSlide();//从装载仓取出
+        delivery.setAbsPoint(20000,0);//运送到载物台
+        giveSlide();//放入载物台
+        while(!Serial.find("1"))
+            Serial.println("wait for scanning");//等待扫描
+        takeSlide();//从载物台取出
+        delivery.setAbsPoint(X_GAP * id + 0, Z_GAP * (i-1));//运送回下一层
+        giveSlide();//放入装载仓
+        delivery.setRevPoint(0,Z_GAP-Z_LIFT);//到下一个位置
+        Serial.print("complete scanning:");
+        Serial.print(id);
+        Serial.print(",");
+        Serial.println(i);
+    }
+    led[id].setColor(Green);//完成装载，亮绿灯
+}
+
+void selectLoader()
+{
+    while(!id_queue.empty())
+    {
+        uint8_t now_id = id_queue.front();
+        startLoader(now_id);
+        id_queue.pop();
+    }
+}
 
 void setup()
 {
-    //初始化GPIO
+    //初始化LED
     for(auto &led: led)
         led.init();
+    //初始化按键
     for(auto &key: key)
         key.init();
     //初始化串口, Serial: USB
