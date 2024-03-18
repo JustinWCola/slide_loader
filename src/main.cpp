@@ -4,14 +4,17 @@
 #include <canopen.h>
 #include <servo.h>
 #include <delivery.h>
+#include <led.h>
 
 CANopen CANOPEN;
 Delivery delivery(CANOPEN);
+Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 
 void setup()
 {
     //初始化GPIO
-
+    for(auto &led: led)
+        led.init();
     //初始化串口, Serial1: D0(RX) D1(TX)
     Serial1.begin(115200);
     //初始化CAN通信, CAN Transceiver: D13(CANRX0) D10(CANTX0)
@@ -20,7 +23,7 @@ void setup()
     delivery.init();
     //初始化电机编码器, D2(A相) D3(B相)
     ENCODER_Init();
-    //初始化电机PWM，D7(CW) D8(CCW) D9(PWM)
+    //初始化电机PWM, D8(CW) D9(PWM)
     MOTOR_Init();
 }
 
@@ -38,11 +41,13 @@ void loop()
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 //    CANOPEN.recvMsg();
+    led[0].setColor(Yellow);
+    Serial1.println("123");
     delivery.setAbsPoint(0,0);
-    while (1)
-    {
-        delivery.getAbsPoint();
-    }
+//    while (1)
+//    {
+//        delivery.getAbsPoint();
+//    }
 //    Serial1.println(encoder_count);
 }
 
