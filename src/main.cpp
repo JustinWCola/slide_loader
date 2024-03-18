@@ -107,18 +107,24 @@ void loop()
     // 一、设置模式，设置各个位置点
 
     /* 二、运行模式
-     * 1.检测待扫描装载仓（1，2，3号）
-     * 2.开始顺序扫描该装载仓，保存各装载仓扫描进度
-     * 3.扫描过程中若检测到紧急装载仓（4号）优先扫描
-     * 4.检测是否为空，连续两次为空视为扫描完成
-     * 5.发送扫描完成信号
+        - 检测装载仓
+          - 若检测到紧急装载仓（0号）则标记
+          - 其余则依次放入队列（1，2，3号）
+        - 扫描装载仓
+          - 若紧急装载仓（0号）被标记则优先扫描
+          - 其余按照队列顺序扫描
+          - 扫描中亮黄灯，确认显微镜扫描完成，打印扫描进度
+          - 扫描完成亮绿灯，退出队列
+          - 连续未扫描到2片，提前结束
      * */
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 //    CANOPEN.recvMsg();
 //    led[0].setColor(Yellow);
-    Serial.println(key[0].getKey());
-    delivery.setAbsPoint(0,0);
+//    Serial.println(key[0].getKey());
+//    delivery.setAbsPoint(0,0);
+    keyDetect();
+    selectLoader();
 //    while (1)
 //    {
 //        delivery.getAbsPoint();
