@@ -15,10 +15,10 @@ bool Delivery::setAbsPoint(int32_t x, int32_t z)
     _axis_x.setAbsPosition(x);
     _axis_z.setAbsPosition(z);
 
-    Serial1.print("setting abs point:");
-    Serial1.print(x);
-    Serial1.print(",");
-    Serial1.println(z);
+    Serial.print("setting abs point:");
+    Serial.print(x);
+    Serial.print(",");
+    Serial.println(z);
 
     return true;
 }
@@ -28,10 +28,10 @@ bool Delivery::setRevPoint(int32_t x, int32_t z)
     _axis_x.setRevPosition(x);
     _axis_z.setRevPosition(z);
 
-    Serial1.print("setting rev point:");
-    Serial1.print(x);
-    Serial1.print(",");
-    Serial1.println(z);
+    Serial.print("setting rev point:");
+    Serial.print(x);
+    Serial.print(",");
+    Serial.println(z);
 
     return true;
 }
@@ -41,10 +41,10 @@ bool Delivery::getAbsPoint()
     _pos_x = _axis_x.getAbsPosition();
     _pos_z = _axis_z.getAbsPosition();
 
-    Serial1.print("getting abs point:");
-    Serial1.print(_pos_x);
-    Serial1.print(",");
-    Serial1.println(_pos_z);
+    Serial.print("getting abs point:");
+    Serial.print(_pos_x);
+    Serial.print(",");
+    Serial.println(_pos_z);
 
     return true;
 }

@@ -40,9 +40,9 @@ void MOTOR_SetPower(int power)
 void MOTOR_Update(float target)
 {
     MOTOR_SetPower((int)motor_pid.calc(target, (float)encoder_count));
-    Serial1.print(motor_pid.target_now);
-    Serial1.print(",");
-    Serial1.print(motor_pid.input_now);
-    Serial1.print(",");
-    Serial1.println(motor_pid.output_now);
+    Serial.print(motor_pid.target_now);
+    Serial.print(",");
+    Serial.print(motor_pid.input_now);
+    Serial.print(",");
+    Serial.println(motor_pid.output_now);
 }

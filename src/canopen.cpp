@@ -10,10 +10,10 @@ bool CANopen::begin(const CanBitRate can_bitrate)
 {
     if (!CAN.begin(can_bitrate))
     {
-        Serial1.println("CAN init failed");
+        Serial.println("CAN init failed");
         for (;;) {}
     }
-    Serial1.println("CAN init ok");
+    Serial.println("CAN init ok");
     return true;
 }
 
@@ -114,13 +114,13 @@ uint8_t CANopen::recvMsg() {
         len = msg.data_length;
         memcpy(recv_msg_buffer, msg.data, len);
 
-//        Serial1.print(F("Id: "));
-//        Serial1.println(can_id,HEX);
-//        Serial1.print(F("data: "));
+//        Serial.print(F("Id: "));
+//        Serial.println(can_id,HEX);
+//        Serial.print(F("data: "));
 //        for(int i = 0; i<len; i++)
 //        {
-//            Serial1.print(recv_msg_buffer[i], HEX);
-//            Serial1.print(" ");
+//            Serial.print(recv_msg_buffer[i], HEX);
+//            Serial.print(" ");
 //        }
 
         // check the type bit, which kind of response it is
@@ -138,16 +138,16 @@ uint8_t CANopen::recvMsg() {
                 return SDO_RESPONSE_WRITE;
             case SDO_ERROR_CODE: // fall through error
                 return SDO_ERROR_CODE;
-//                Serial1.println(F("\nERROR"));
-//                Serial1.print(F("Error Message is: "));
+//                Serial.println(F("\nERROR"));
+//                Serial.print(F("Error Message is: "));
 //                for (uint8_t i=0; i<len; i++)
-//                    Serial1.print(recv_msg_buffer[i], HEX);
+//                    Serial.print(recv_msg_buffer[i], HEX);
             case 0:
                 //PDO message
-//                Serial1.println(F("\nPDO Msg received"));
-//                Serial1.print(F("Message is: "));
+//                Serial.println(F("\nPDO Msg received"));
+//                Serial.print(F("Message is: "));
 //                for (uint8_t i=0; i<len; i++)
-//                    Serial1.print(recv_msg_buffer[i], HEX);
+//                    Serial.print(recv_msg_buffer[i], HEX);
                 break; // maybe another msg is waiting
             default:
                 break;
@@ -163,7 +163,7 @@ bool CANopen::startOperational(uint8_t id)
     send_msg_buffer[1] = id;
     sendMsg(0x000,2);
     while (!recvMsg())
-        Serial1.println("starting operational");
+        Serial.println("starting operational");
     return true;
 }
 
@@ -174,7 +174,7 @@ bool CANopen::resetNode(uint8_t id)
     send_msg_buffer[1] = id;
     sendMsg(0x0000,2);
     while (!recvMsg())
-        Serial1.println("resetting node");
+        Serial.println("resetting node");
     return true;
 }
 
@@ -185,6 +185,6 @@ bool CANopen::sendSyncMsg(uint8_t id)
     send_msg_buffer[1] = id;
     sendMsg(0x0000,2);
     while (!recvMsg())
-        Serial1.println("sending sync msg");
+        Serial.println("sending sync msg");
     return true;
 }
