@@ -18,12 +18,15 @@ Delivery delivery(CANOPEN);
 Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 Key key[4]{14,15,16,17};
 std::queue<uint8_t> id_queue;
+bool isVIP = false;
 
 void keyDetect()
 {
-    for(int i=0;i<4;i++)
+    if(key[0].getKey() == RISING)
+        isVIP = true;
+    for(int i=1;i<4;i++)
     {
-        if(key[i].getKey()==HIGH)
+        if(key[i].getKey()== RISING)
         {
             id_queue.push(i);
             led[i].setColor(Red);
@@ -70,10 +73,11 @@ void startLoader(uint8_t id)
 
 void selectLoader()
 {
-    while(!id_queue.empty())
+    if(isVIP)
+        startLoader(0);
+    if(!id_queue.empty())
     {
-        uint8_t now_id = id_queue.front();
-        startLoader(now_id);
+        startLoader(id_queue.front());
         id_queue.pop();
     }
 }
