@@ -5,18 +5,22 @@
 #include <servo.h>
 #include <delivery.h>
 #include <led.h>
+#include <key.h>
 
 CANopen CANOPEN;
 Delivery delivery(CANOPEN);
 Led led[4]{{18,19},{12,11},{7,6},{5,4}};
+Key key[4]{14,15,16,17};
 
 void setup()
 {
     //初始化GPIO
     for(auto &led: led)
         led.init();
-    //初始化串口, Serial1: D0(RX) D1(TX)
-    Serial1.begin(115200);
+    for(auto &key: key)
+        key.init();
+    //初始化串口, Serial: USB
+    Serial.begin(115200);
     //初始化CAN通信, CAN Transceiver: D13(CANRX0) D10(CANTX0)
     CANOPEN.begin(CanBitRate::BR_1000k);
     //初始化伺服电机
@@ -41,13 +45,13 @@ void loop()
 //    MOTOR_SetPower(0);
 //    MOTOR_Update(1050);
 //    CANOPEN.recvMsg();
-    led[0].setColor(Yellow);
-    Serial1.println("123");
+//    led[0].setColor(Yellow);
+    Serial.println(key[0].getKey());
     delivery.setAbsPoint(0,0);
 //    while (1)
 //    {
 //        delivery.getAbsPoint();
 //    }
-//    Serial1.println(encoder_count);
+//    Serial.println(encoder_count);
 }
 
