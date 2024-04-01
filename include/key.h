@@ -7,6 +7,13 @@
 
 #include <Arduino.h>
 
+typedef enum eKeyStatus: uint8_t
+{
+    None = 0x00,
+    Pressed = 0x01,
+    Released = 0x02,
+};
+
 class Key{
 public:
     Key(uint8_t pin):_pin(pin){}

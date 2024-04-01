@@ -23,7 +23,7 @@ void MOTOR_SetPower(int power)
         digitalWrite(MOTOR_DIR, HIGH);
         analogWrite(MOTOR_PWM, power);
     }
-    else(power < 0)
+    else
     {
         digitalWrite(MOTOR_DIR, LOW);
         analogWrite(MOTOR_PWM, power);

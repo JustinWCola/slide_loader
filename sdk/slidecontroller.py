@@ -7,9 +7,15 @@ from threading import Thread
 
 
 class Color(object):
-    red = 0x01
-    green = 0x10
-    yellow = 0x11
+    red = b"\x01"
+    green = b"\x10"
+    yellow = b"\x11"
+
+
+class Key(object):
+    none = b"\x00"
+    pressed = b"\x01"
+    released = b"\x02"
 
 
 class SlideController(object):
@@ -32,9 +38,11 @@ class SlideController(object):
         self.z_pos = 0
         self.delivery_reach = False
         self.loader_reach = False
-        self.key = [False, False, False, False]
+        self.key = [Key.none, Key.none, Key.none, Key.none]
         self.led = [Color.red, Color.red, Color.red, Color.red]
         self.serial = serial.Serial('COM14', 115200, timeout=0.2)
+
+        self.set_led_color(self.led)
 
     def set_delivery_abs_point(self, x, z):
         self.serial.write(b"\xA1" + b"\xB1" + struct.pack("<ff", x, z))
@@ -84,12 +92,15 @@ class SlideController(object):
                 elif cmd_id == b"\xC3":
                     self.loader_reach = self.serial.read()
                 elif cmd_id == b"\xC4":
-                    self.key = struct.unpack("<????", self.serial.read(4))
-                    if self.key[0]:
-                        self.queue.put((1, 0))
-                    for i in range(1, 4):
-                        if self.key[i]:
-                            self.queue.put((2, i))
+                    self.key = struct.unpack("<cccc", self.serial.read(4))
+                    for i in range(0, 4):
+                        if self.key[i] == Key.pressed:
+                            if i == 0:
+                                self.queue.put((1, 0))
+                            else:
+                                self.queue.put((2, i))
+                            self.led[i] = Color.red
+                        elif self.key[i] == Key.released:
                             self.led[i] = Color.red
                     self.set_led_color(self.led)
 
@@ -122,12 +133,12 @@ class SlideController(object):
     def select_loader(self):
         while True:
             if not self.queue.empty():
-                self.start_loader(self.queue.get())
+                self.start_loader(self.queue.get()[1])
 
 
 if __name__ == '__main__':
     sc = SlideController()
     main_thread = threading.Thread(target=sc.select_loader)
-    serial_thread = threading.Thread(target=sc.read_msg())
+    serial_thread = threading.Thread(target=sc.read_msg)
     main_thread.start()
     serial_thread.start()

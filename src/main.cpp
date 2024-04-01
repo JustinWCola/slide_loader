@@ -144,21 +144,30 @@ void TaskKey(void *param)
     {
         uint8_t keyPressed[4];
         uint8_t lastKeyPressed[4];
-        bool isKeyPressed = false;
+        uint8_t keyStatus[4];
+        bool isKeyDetected = false;
         for(int i=0;i<4;i++)
         {
             lastKeyPressed[i] = keyPressed[i];
             keyPressed[i] = key[i].getKey();
             if(keyPressed[i] != lastKeyPressed[i])
-                isKeyPressed = true;
+            {
+                isKeyDetected = true;
+                if(lastKeyPressed[i] == LOW)
+                    keyStatus[i] = Pressed;
+                else
+                    keyStatus[i] = Released;
+            }
+            else
+                keyStatus[i] = None;
         }
 
-        if(isKeyPressed)
+        if(isKeyDetected)
         {
             uint8_t tx_data[6];
             tx_data[0] = 0xA1;
             tx_data[1] = 0xC4;
-            memcpy(tx_data+2,keyPressed,4);
+            memcpy(tx_data+2,keyStatus,4);
             Serial.write(tx_data,6);
         }
 
