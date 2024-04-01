@@ -5,15 +5,14 @@
 #include <Arduino.h>
 #include <motor.h>
 #include <pid.h>
-#include "encoder.h"
+#include <encoder.h>
 
 Pid motor_pid(1, 0, 0.5);
 bool isReachTarget = false;
 
 void MOTOR_Init()
 {
-    pinMode(MOTOR_CW,OUTPUT);
-    pinMode(MOTOR_CCW,OUTPUT);
+    pinMode(MOTOR_DIR,OUTPUT);
     pinMode(MOTOR_PWM,OUTPUT);
 }
 
@@ -21,26 +20,19 @@ void MOTOR_SetPower(int power)
 {
     if (power > 0)
     {
-        digitalWrite(MOTOR_CW, HIGH);
-        digitalWrite(MOTOR_CCW, LOW);
+        digitalWrite(MOTOR_DIR, HIGH);
         analogWrite(MOTOR_PWM, power);
     }
-    else if (power < 0)
+    else(power < 0)
     {
-        digitalWrite(MOTOR_CW, LOW);
-        digitalWrite(MOTOR_CCW, HIGH);
+        digitalWrite(MOTOR_DIR, LOW);
         analogWrite(MOTOR_PWM, power);
-    }
-    else
-    {
-        digitalWrite(MOTOR_CW, LOW);
-        digitalWrite(MOTOR_CCW, LOW);
     }
 }
 
 void MOTOR_SetTarget(float target)
 {
-    motor_pid.setTarget(target);
+    motor_pid.setTarget(target * MOTOR_RATIO);
     isReachTarget = false;
 }
 
