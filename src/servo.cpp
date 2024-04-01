@@ -170,7 +170,14 @@ bool Servo::setRevPosition(int32_t pos)
  */
 int32_t Servo::getAbsPosition()
 {
-    static int32_t postion;
-    _can.read(_id,0x6064,0,(uint32_t*)&postion);
-    return postion;
+    int32_t position;
+    _can.read(_id,I_NOW_POSITION,0,(uint32_t*)&position);
+    return position;
+}
+
+bool Servo::getReach()
+{
+    uint16_t status;
+    _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
+    return (status&(0x01<<10))==0;
 }

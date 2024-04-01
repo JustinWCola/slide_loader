@@ -188,7 +188,9 @@ void TaskDelivery(void *param)
 {
     while(1)
     {
-        delivery.getAbsPoint();
+        if(!delivery.getReach())
+            delivery.getAbsPoint();
+
         vTaskDelay(100/portTICK_PERIOD_MS);
     }
 }

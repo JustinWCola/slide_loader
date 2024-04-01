@@ -36,6 +36,7 @@ typedef enum eMotionMode : uint8_t
     CST = 0x0A,     //循环同步转矩模式
 };   //运动模式
 
+#define I_NOW_POSITION      0x6064  //当前位置
 #define I_TARGET_POSITION   0x607A  //目标位置
 #define I_PROFILE_VELOCITY  0x6081  //轮廓速度
 #define I_END_VELOCITY      0x6082  //终点速度
@@ -68,6 +69,7 @@ public:
     bool setRevPosition(int32_t pos);
 
     int32_t getAbsPosition();
+    bool getReach();
 
 private:
     uint8_t _id;

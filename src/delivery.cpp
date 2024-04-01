@@ -54,3 +54,20 @@ bool Delivery::getAbsPoint()
 
     return true;
 }
+
+
+bool Delivery::getReach()
+{
+    if(_axis_x.getReach() && _axis_z.getReach())
+    {
+        uint8_t tx_data[3];
+        tx_data[0] = 0xA1;
+        tx_data[1] = 0xC2;
+        tx_data[2] = 0x01;
+        Serial.write(tx_data,10);
+
+        return true;
+    }
+    else
+        return false;
+}

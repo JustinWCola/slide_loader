@@ -32,6 +32,7 @@ public:
     bool setRevPoint(float x, float z);
 
     bool getAbsPoint();
+    bool getReach();
 
 private:
     CANopen _can;
