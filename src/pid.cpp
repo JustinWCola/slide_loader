@@ -8,10 +8,9 @@
  * @param input   PID输入值
  * @return output PID输出值
  */
-float Pid::calc(float target, float input)
+float Pid::calc(float input)
 {
     //传递目标与输入值
-    target_now = target;
     input_now = input;
 
     //各种优化算法
@@ -74,6 +73,11 @@ void Pid::ramp()
             ramp_flag = false;
     }
     target_last = target_now;
+}
+
+float Pid::setTarget(float target)
+{
+    target_now = target;
 }
 
 void Pid::setParam(float p, float i, float d)

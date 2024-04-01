@@ -8,8 +8,19 @@
 #include <canopen.h>
 #include <servo.h>
 
-#define X_ENCODER_TO_MM (360.0f/10000.0f)*2.0f //X轴编码器位置 -> 实际位置(mm)
-#define Z_ENCODER_TO_MM (360.0f/10000.0f)*2.0f //Z轴编码器位置 -> 实际位置(mm)
+#define X_LENGTH 310.0f //X轴丝杆行程
+#define Z_LENGTH 120.0f //Z轴丝杆行程
+
+#define X_GUIDE  5.0f   //X轴丝杆导程
+#define Z_GUIDE  2.0f   //Z轴丝杆导程
+
+#define SERVO_PULSE 10000.0f    //伺服电机脉冲数
+
+#define X_PULSE_TO_MM (X_GUIDE/SERVO_PULSE) //X轴编码器位置 -> 实际位置(mm)
+#define Z_PULSE_TO_MM (Z_GUIDE/SERVO_PULSE) //Z轴编码器位置 -> 实际位置(mm)
+
+#define X_MM_TO_PULSE (X_GUIDE/SERVO_PULSE) //X轴编码器位置 -> 实际位置(mm)
+#define Z_MM_TO_PULSE (Z_GUIDE/SERVO_PULSE) //Z轴编码器位置 -> 实际位置(mm)
 
 class Delivery
 {
@@ -17,8 +28,8 @@ public:
     explicit Delivery(CANopen can) : _can(can){}
 
     void init();
-    bool setAbsPoint(int32_t x, int32_t z);
-    bool setRevPoint(int32_t x, int32_t z);
+    bool setAbsPoint(float x, float z);
+    bool setRevPoint(float x, float z);
 
     bool getAbsPoint();
 
@@ -27,8 +38,8 @@ private:
     Servo _axis_x{_can, 1};
     Servo _axis_z{_can, 2};
 
-    int32_t _pos_x;
-    int32_t _pos_z;
+    float _pos_x;
+    float _pos_z;
 };
 
 #endif //DELIVERY_H

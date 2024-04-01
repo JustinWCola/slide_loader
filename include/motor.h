@@ -13,6 +13,7 @@
 
 void MOTOR_Init();
 void MOTOR_SetPower(int power);
-void MOTOR_Update(float target);
+void MOTOR_SetTarget(float target);
+bool MOTOR_Update();
 
 #endif //MOTOR_H

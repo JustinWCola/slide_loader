@@ -25,7 +25,8 @@ public:
             _kp(kp), _ki(ki), _kd(kd), _error_max(error_max), _output_max(output_max), _output_step_max(output_step_max), ramp_step(ramp_step)
     {}
 
-    float calc(float target, float input);
+    float calc(float input);
+    float setTarget(float target);
     void setParam(float p, float i, float d);
     void clear();
 

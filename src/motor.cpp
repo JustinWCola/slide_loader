@@ -8,6 +8,7 @@
 #include "encoder.h"
 
 Pid motor_pid(1, 0, 0.5);
+bool isReachTarget = false;
 
 void MOTOR_Init()
 {
@@ -37,12 +38,25 @@ void MOTOR_SetPower(int power)
     }
 }
 
-void MOTOR_Update(float target)
+void MOTOR_SetTarget(float target)
 {
-    MOTOR_SetPower((int)motor_pid.calc(target, (float)encoder_count));
-    Serial.print(motor_pid.target_now);
-    Serial.print(",");
-    Serial.print(motor_pid.input_now);
-    Serial.print(",");
-    Serial.println(motor_pid.output_now);
+    motor_pid.setTarget(target);
+    isReachTarget = false;
+}
+
+bool MOTOR_Update()
+{
+    MOTOR_SetPower((int)motor_pid.calc((float)encoder_count));
+    if (abs(motor_pid.input_now - motor_pid.output_now) < 0.1f && !isReachTarget)
+    {
+        isReachTarget = true;
+        return true;
+    }
+    else
+        return false;
+//    Serial.print(motor_pid.target_now);
+//    Serial.print(",");
+//    Serial.print(motor_pid.input_now);
+//    Serial.print(",");
+//    Serial.println(motor_pid.output_now);
 }
