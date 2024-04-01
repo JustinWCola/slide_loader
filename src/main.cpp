@@ -5,84 +5,12 @@
 #include <delivery.h>
 #include <led.h>
 #include <key.h>
-#include <queue>
 #include <Arduino_FreeRTOS.h>
-
-#define X_GAP 1000  //X轴间距
-#define Z_GAP 100   //Z轴间距
-
-#define Z_LIFT 50   //Z轴升降距离
-#define Y_DISTANCE 1000    //Y轴距离
 
 CANopen CANOPEN;
 Delivery delivery(CANOPEN);
 Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 Key key[4]{14,15,16,17};
-std::queue<uint8_t> id_queue;
-bool isVIP = false;
-float y_pos = 0;
-
-//void keyDetect()
-//{
-//    if(key[0].getKey() == RISING)
-//        isVIP = true;
-//    for(int i=1;i<4;i++)
-//    {
-//        if(key[i].getKey()== RISING)
-//        {
-//            id_queue.push(i);
-//            led[i].setColor(Red);
-//        }
-//    }
-//}
-//
-//void takeSlide()
-//{
-//    MOTOR_Update(Y_DISTANCE);//执行机构伸出
-//    delivery.setRevPoint(0, Z_LIFT);//向上
-//    MOTOR_Update(0);//执行机构收回
-//}
-//
-//void giveSlide()
-//{
-//    MOTOR_Update(Y_DISTANCE);//执行机构伸出
-//    delivery.setRevPoint(0,-Z_LIFT);//向下
-//    MOTOR_Update(0);//执行机构收回
-//}
-//
-//void startLoader(uint8_t id)
-//{
-//    led[id].setColor(Yellow);//开始装载，亮黄灯
-//    delivery.setAbsPoint(X_GAP * id + 0, 0);
-//    for(int i=0;i<24;i++)
-//    {
-//        takeSlide();//从装载仓取出
-//        delivery.setAbsPoint(20000,0);//运送到载物台
-//        giveSlide();//放入载物台
-//        while(!Serial.find("1"))
-//            Serial.println("wait for scanning");//等待扫描
-//        takeSlide();//从载物台取出
-//        delivery.setAbsPoint(X_GAP * id + 0, Z_GAP * (i-1));//运送回下一层
-//        giveSlide();//放入装载仓
-//        delivery.setRevPoint(0,Z_GAP-Z_LIFT);//到下一个位置
-//        Serial.print("complete scanning:");
-//        Serial.print(id);
-//        Serial.print(",");
-//        Serial.println(i);
-//    }
-//    led[id].setColor(Green);//完成装载，亮绿灯
-//}
-//
-//void selectLoader()
-//{
-//    if(isVIP)
-//        startLoader(0);
-//    if(!id_queue.empty())
-//    {
-//        startLoader(id_queue.front());
-//        id_queue.pop();
-//    }
-//}
 
 void TaskSerial(void *param);
 void TaskDelivery(void *param);
@@ -107,7 +35,6 @@ void setup()
 //    ENCODER_Init();
     //初始化电机PWM, D8(CW) D9(PWM)
 //    MOTOR_Init();
-//    led[0].setColor(Yellow);
 
     xTaskCreate(TaskSerial, "Serial", 128, nullptr, 1, nullptr);
 //    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
@@ -242,31 +169,6 @@ void TaskKey(void *param)
 
 void loop()
 {
-    // 一、设置模式，设置各个位置点
 
-    /* 二、运行模式
-        - 检测装载仓
-          - 若检测到紧急装载仓（0号）则标记
-          - 其余则依次放入队列（1，2，3号）
-        - 扫描装载仓
-          - 若紧急装载仓（0号）被标记则优先扫描
-          - 其余按照队列顺序扫描
-          - 扫描中亮黄灯，确认显微镜扫描完成，打印扫描进度
-          - 扫描完成亮绿灯，退出队列
-          - 连续未扫描到2片，提前结束
-     * */
-//    MOTOR_SetPower(0);
-//    MOTOR_Update(1050);
-//    CANOPEN.recvMsg();
-//    led[0].setColor(Yellow);
-//    Serial.println(key[0].getKey());
-//    delivery.setAbsPoint(0,0);
-//    keyDetect();
-//    selectLoader();
-//    while (1)
-//    {
-//        delivery.getAbsPoint();
-//    }
-//    Serial.println(encoder_count);
 }
 
