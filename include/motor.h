@@ -9,6 +9,7 @@
 #define MOTOR_PWM 9
 
 #define MOTOR_RATIO 105
+#define MOTOR_RADIUS 10
 
 void MOTOR_Init();
 void MOTOR_SetPower(int power);

@@ -54,6 +54,9 @@ class SlideController(object):
             elif cmd_id == b"\xC4":
                 self.key = struct.unpack("<????", self.serial.read(4))
 
+    def take_slide(self):
+        self.set_loader_point()
+
 
 if __name__ == '__main__':
     sc = SlideController()

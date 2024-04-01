@@ -32,7 +32,7 @@ void MOTOR_SetPower(int power)
 
 void MOTOR_SetTarget(float target)
 {
-    motor_pid.setTarget(target * MOTOR_RATIO);
+    motor_pid.setTarget(target * MOTOR_RATIO * 2 * (float)PI * MOTOR_RADIUS);
     isReachTarget = false;
 }
 
