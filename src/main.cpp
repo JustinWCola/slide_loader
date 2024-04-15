@@ -104,6 +104,14 @@ void TaskSerial(void *param)
                             if (rx_data[i] != 0)
                                 led[i].setColor((eLedColor)rx_data[i]);
                         break;
+                    case 0xB5:
+                        Serial.readBytes(rx_data,12);
+                        memcpy(&x,rx_data, 4);
+                        memcpy(&y,rx_data + 4, 4);
+                        memcpy(&z,rx_data + 8, 4);
+                        delivery.setUnitConvert(x,z);
+                        MOTOR_SetUnitConvert(y);
+                        break;
                 }
             }
         }

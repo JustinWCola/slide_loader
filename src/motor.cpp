@@ -9,6 +9,7 @@
 
 Pid motor_pid(1, 0, 0.5);
 bool isReachTarget = false;
+float y_to_mm = MOTOR_RATIO * 2 * (float)PI * MOTOR_RADIUS;
 
 void MOTOR_Init()
 {
@@ -32,7 +33,7 @@ void MOTOR_SetPower(int power)
 
 void MOTOR_SetTarget(float target)
 {
-    motor_pid.setTarget(target * MOTOR_RATIO * 2 * (float)PI * MOTOR_RADIUS);
+    motor_pid.setTarget(target * y_to_mm);
     isReachTarget = false;
 }
 
@@ -51,4 +52,9 @@ bool MOTOR_Update()
 //    Serial.print(motor_pid.input_now);
 //    Serial.print(",");
 //    Serial.println(motor_pid.output_now);
+}
+
+bool MOTOR_SetUnitConvert(float y)
+{
+    y_to_mm = y;
 }

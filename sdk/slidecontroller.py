@@ -1,4 +1,3 @@
-import threading
 import time
 import serial
 import struct
@@ -34,8 +33,12 @@ class SlideController(object):
 
         self.queue = queue.PriorityQueue()
 
-        self.x_pos = 0
-        self.z_pos = 0
+        self.x_now_pos = 0
+        self.z_now_pos = 0
+
+        self.x_tar_pos = 0
+        self.z_tar_pos = 0
+
         self.delivery_reach = False
         self.loader_reach = False
         self.key = [Key.none, Key.none, Key.none, Key.none]
@@ -45,14 +48,30 @@ class SlideController(object):
         self.set_led_color(self.led)
 
     def set_delivery_abs_point(self, x, z):
+        self.x_tar_pos = x
+        self.z_tar_pos = z
         self.serial.write(b"\xA1" + b"\xB1" + struct.pack("<ff", x, z))
         while not self.delivery_reach:
             time.sleep(0.2)
 
     def set_delivery_rev_point(self, x, z):
+        self.x_tar_pos += x
+        self.z_tar_pos += z
         self.serial.write(b"\xA1" + b"\xB2" + struct.pack("<ff", x, z))
         while not self.delivery_reach:
             time.sleep(0.2)
+
+    def set_delivery_abs_x(self, x):
+        self.set_delivery_abs_point(x, self.z_tar_pos)
+
+    def set_delivery_abs_z(self, z):
+        self.set_delivery_abs_point(self.x_tar_pos, z)
+
+    def set_delivery_rev_x(self, x):
+        self.set_delivery_rev_point(x, 0)
+
+    def set_delivery_rev_z(self, z):
+        self.set_delivery_rev_point(0, z)
 
     def set_loader_point(self, y):
         self.serial.write(b"\xA1" + b"\xB3" + struct.pack("<f", y))
@@ -61,6 +80,9 @@ class SlideController(object):
 
     def set_led_color(self, led):
         self.serial.write(b"\xA1" + b"\xB4" + led[0] + led[1] + led[2] + led[3])
+
+    def set_unit_convert(self, x, y, z):
+        self.serial.write(b"\xA1" + b"\xB5" + struct.pack("<fff", x, y, z))
 
     def read_msg(self):
         # byte 0 start 0xA1
@@ -85,8 +107,8 @@ class SlideController(object):
             if self.serial.read() == b"\xA1":
                 cmd_id = self.serial.read()
                 if cmd_id == b"\xC1":
-                    self.x_pos = struct.unpack("<f", self.serial.read(4))
-                    self.z_pos = struct.unpack("<f", self.serial.read(4))
+                    self.x_now_pos = struct.unpack("<f", self.serial.read(4))
+                    self.z_now_pos = struct.unpack("<f", self.serial.read(4))
                 elif cmd_id == b"\xC2":
                     self.delivery_reach = self.serial.read()
                 elif cmd_id == b"\xC3":
@@ -138,7 +160,7 @@ class SlideController(object):
 
 if __name__ == '__main__':
     sc = SlideController()
-    main_thread = threading.Thread(target=sc.select_loader)
-    serial_thread = threading.Thread(target=sc.read_msg)
+    main_thread = Thread(target=sc.select_loader)
+    serial_thread = Thread(target=sc.read_msg)
     main_thread.start()
     serial_thread.start()
