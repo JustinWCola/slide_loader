@@ -162,5 +162,6 @@ if __name__ == '__main__':
     sc = SlideController()
     main_thread = Thread(target=sc.select_loader)
     serial_thread = Thread(target=sc.read_msg)
-    main_thread.start()
+    # main_thread.start()
     serial_thread.start()
+    sc.set_delivery_abs_point(0, 0)
