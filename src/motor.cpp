@@ -7,9 +7,9 @@
 #include <pid.h>
 #include <encoder.h>
 
-Pid motor_pid(1, 0, 0.5);
+Pid motor_pid(5, 0, 0.5);
 bool isReachTarget = false;
-float y_to_mm = MOTOR_RATIO * 2 * (float)PI * MOTOR_RADIUS;
+float y_to_mm = 2 * (float)PI * MOTOR_RADIUS / MOTOR_RATIO / ENCODER_PULSE;
 
 void MOTOR_Init()
 {
@@ -43,14 +43,14 @@ void MOTOR_SetPower(int power)
 
 void MOTOR_SetTarget(float target)
 {
-    motor_pid.setTarget(target * y_to_mm);
-    isReachTarget = false;
+    motor_pid.setTarget(target / y_to_mm);
+//    isReachTarget = false;
 }
 
 bool MOTOR_Update()
 {
     MOTOR_SetPower((int)motor_pid.calc((float)encoder_count));
-//    if (abs(motor_pid.input_now - motor_pid.output_now) < 0.1f && !isReachTarget)
+//    if (abs(motor_pid.input_now - motor_pid.output_now) < 5.0f && !isReachTarget)
 //    {
 //        isReachTarget = true;
 //        return true;

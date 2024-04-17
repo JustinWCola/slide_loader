@@ -12,8 +12,10 @@ void Delivery::init()
 
 bool Delivery::setAbsPoint(float x, float z)
 {
-    _axis_x.setAbsPosition((int32_t)(x * _x_to_mm));
-    _axis_z.setAbsPosition((int32_t)(z * _z_to_mm));
+//    _axis_x.setAbsPosition(200000);
+//    _axis_z.setAbsPosition(200000);
+    _axis_x.setAbsPosition((int32_t)(x / _x_to_mm));
+    _axis_z.setAbsPosition((int32_t)(z / _z_to_mm));
 
     Serial.print("setting abs point:");
     Serial.print(x);
@@ -25,8 +27,8 @@ bool Delivery::setAbsPoint(float x, float z)
 
 bool Delivery::setRevPoint(float x, float z)
 {
-    _axis_x.setRevPosition((int32_t)(x * _x_to_mm));
-    _axis_z.setRevPosition((int32_t)(z * _z_to_mm));
+    _axis_x.setRevPosition((int32_t)(x / _x_to_mm));
+    _axis_z.setRevPosition((int32_t)(z / _z_to_mm));
 
     Serial.print("setting rev point:");
     Serial.print(x);
@@ -45,8 +47,8 @@ bool Delivery::setUnitConvert(float x, float z)
 
 bool Delivery::getAbsPoint()
 {
-    _pos_x = (float)_axis_x.getAbsPosition() / _x_to_mm;
-    _pos_z = (float)_axis_z.getAbsPosition() / _z_to_mm;
+    _pos_x = (float)_axis_x.getAbsPosition() * _x_to_mm;
+    _pos_z = (float)_axis_z.getAbsPosition() * _z_to_mm;
 
     uint8_t tx_data[10];
     tx_data[0] = 0xA1;
@@ -76,5 +78,13 @@ bool Delivery::getReach()
         return true;
     }
     else
+    {
+        uint8_t tx_data[3];
+        tx_data[0] = 0xA1;
+        tx_data[1] = 0xC2;
+        tx_data[2] = 0x00;
+        Serial.write(tx_data,10);
+
         return false;
+    }
 }

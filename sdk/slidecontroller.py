@@ -43,7 +43,8 @@ class SlideController(object):
         self.loader_reach = False
         self.key = [Key.none, Key.none, Key.none, Key.none]
         self.led = [Color.red, Color.red, Color.red, Color.red]
-        self.serial = serial.Serial('COM14', 115200, timeout=0.2)
+        self.serial = serial.Serial('COM14', 115200)
+        time.sleep(2)
 
         self.set_led_color(self.led)
 
@@ -153,15 +154,20 @@ class SlideController(object):
         self.set_led_color(self.led)
 
     def select_loader(self):
-        while True:
-            if not self.queue.empty():
-                self.start_loader(self.queue.get()[1])
+        # while True:
+        time.sleep(2)
+        self.set_loader_point(240)
+        time.sleep(2)
+
+        # while True:
+        #     if not self.queue.empty():
+        #         self.start_loader(self.queue.get()[1])
 
 
 if __name__ == '__main__':
     sc = SlideController()
-    main_thread = Thread(target=sc.select_loader)
     serial_thread = Thread(target=sc.read_msg)
-    # main_thread.start()
+    main_thread = Thread(target=sc.select_loader)
     serial_thread.start()
-    sc.set_delivery_abs_point(0, 0)
+    main_thread.start()
+

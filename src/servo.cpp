@@ -26,7 +26,7 @@ void Servo::init()
 bool Servo::setCtrlMode(eCtrlMode ctrl_mode)
 {
     _can.write(_id, I_CTRL_PARAM, SI_CTRL_MODE, (uint16_t)ctrl_mode);
-    uint16_t new_mode = 5;
+    uint16_t new_mode = 0;
     do
     {
         _can.read(_id, I_CTRL_PARAM, SI_CTRL_MODE, (uint32_t*)&new_mode);
@@ -45,14 +45,14 @@ bool Servo::setCtrlMode(eCtrlMode ctrl_mode)
 bool Servo::setMotionMode(eMotionMode motion_mode)
 {
     _can.write(_id, I_MOTION_MODE, 0, (uint8_t)motion_mode);
-//    uint8_t new_mode = 0x00;
-//    do
-//    {
-//        _can.read(_id, I_MOTION_MODE, 0, (uint32_t*)&new_mode);
-//        new_mode = (uint8_t)new_mode;
-//        Serial.print("setting motion mode, ID:");
-//        Serial.println(_id);
-//    } while(new_mode != motion_mode);
+    uint8_t new_mode = 0x00;
+    do
+    {
+        _can.read(_id, I_MOTION_MODE, 0, (uint32_t*)&new_mode);
+        new_mode = (uint8_t)new_mode;
+        Serial.print("setting motion mode, ID:");
+        Serial.println(_id);
+    } while(new_mode != motion_mode);
     return true;
 }
 
@@ -179,5 +179,5 @@ bool Servo::getReach()
 {
     uint16_t status;
     _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
-    return (status&(0x01<<10))==0;
+    return (status&(1<<10))>>10;
 }
