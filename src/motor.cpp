@@ -13,20 +13,30 @@ float y_to_mm = MOTOR_RATIO * 2 * (float)PI * MOTOR_RADIUS;
 
 void MOTOR_Init()
 {
-    pinMode(MOTOR_DIR,OUTPUT);
+    pinMode(MOTOR_CW,OUTPUT);
+    pinMode(MOTOR_CCW,OUTPUT);
     pinMode(MOTOR_PWM,OUTPUT);
+}
+
+void MOTOR_Clear()
+{
+    encoder_count = 0;
+    motor_pid.clear();
+    MOTOR_SetPower(0);
 }
 
 void MOTOR_SetPower(int power)
 {
     if (power > 0)
     {
-        digitalWrite(MOTOR_DIR, HIGH);
+        digitalWrite(MOTOR_CW, LOW);
+        digitalWrite(MOTOR_CCW, HIGH);
         analogWrite(MOTOR_PWM, power);
     }
     else
     {
-        digitalWrite(MOTOR_DIR, LOW);
+        digitalWrite(MOTOR_CW, HIGH);
+        digitalWrite(MOTOR_CCW, LOW);
         analogWrite(MOTOR_PWM, power);
     }
 }
@@ -40,13 +50,13 @@ void MOTOR_SetTarget(float target)
 bool MOTOR_Update()
 {
     MOTOR_SetPower((int)motor_pid.calc((float)encoder_count));
-    if (abs(motor_pid.input_now - motor_pid.output_now) < 0.1f && !isReachTarget)
-    {
-        isReachTarget = true;
-        return true;
-    }
-    else
-        return false;
+//    if (abs(motor_pid.input_now - motor_pid.output_now) < 0.1f && !isReachTarget)
+//    {
+//        isReachTarget = true;
+//        return true;
+//    }
+//    else
+//        return false;
 //    Serial.print(motor_pid.target_now);
 //    Serial.print(",");
 //    Serial.print(motor_pid.input_now);

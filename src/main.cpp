@@ -11,7 +11,7 @@ CANopen CANOPEN;
 Delivery delivery(CANOPEN);
 Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 Key key[4]{14,15,16,17};
-Key sw[2]{0,1};
+Key sw(0);
 
 void TaskSerial(void *param);
 void TaskDelivery(void *param);
@@ -28,21 +28,26 @@ void setup()
         key.init();
     //初始化串口, Serial: USB
     Serial.begin(115200);
-    //初始化CAN通信, CAN Transceiver: D13(CANRX0) D10(CANTX0)
-    CANOPEN.begin(CanBitRate::BR_1000k);
-    //初始化伺服电机
-    delivery.init();
+//    //初始化CAN通信, CAN Transceiver: D13(CANRX0) D10(CANTX0)
+//    CANOPEN.begin(CanBitRate::BR_1000k);
+//    //初始化伺服电机
+//    delivery.init();
     //初始化限位开关
-    for(auto &sw: sw)
-        sw.init();
+    sw.init();
     //初始化电机编码器, D2(A相) D3(B相)
     ENCODER_Init();
     //初始化电机PWM, D8(DIR) D9(PWM)
     MOTOR_Init();
+    //电机位置归零
+    while (sw.getKey() != HIGH)
+    {
+        MOTOR_SetPower(100);
+    }
+    MOTOR_Clear();
 
     xTaskCreate(TaskSerial, "Serial", 128, nullptr, 1, nullptr);
-    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
-    xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
+//    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
+//    xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
     xTaskCreate(TaskKey, "Key", 128, nullptr, 1, nullptr);
 
     vTaskStartScheduler();
@@ -52,7 +57,6 @@ void TaskSerial(void *param)
 {
     while(1)
     {
-        delivery.setAbsPoint(0, 0);
         /*
          * byte 0 start 0xA1
          * byte 1 cmd id(delivery/loader/led)
@@ -140,6 +144,8 @@ void TaskLoader(void *param)
 {
     while(1)
     {
+//        MOTOR_SetTarget(-200);
+
         if(MOTOR_Update())
         {
             uint8_t tx_data[3];
@@ -148,7 +154,7 @@ void TaskLoader(void *param)
             tx_data[2] = 0x01;
             Serial.write(tx_data,3);
         }
-        vTaskDelay(100/portTICK_PERIOD_MS);
+        vTaskDelay(5/portTICK_PERIOD_MS);
     }
 }
 
