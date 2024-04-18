@@ -4,73 +4,6 @@
 
 #include <Arduino.h>
 #include <motor.h>
-#include <pid.h>
-#include <encoder.h>
-
-Pid motor_pid(5, 0, 0.5);
-bool isReachTarget = false;
-float y_to_mm = 2 * (float)PI * MOTOR_RADIUS / MOTOR_RATIO / ENCODER_PULSE;
-float y_tar_pos = 0;
-
-void MOTOR_Init()
-{
-    pinMode(MOTOR_CW,OUTPUT);
-    pinMode(MOTOR_CCW,OUTPUT);
-    pinMode(MOTOR_PWM,OUTPUT);
-}
-
-void MOTOR_Clear()
-{
-    encoder_count = 0;
-    motor_pid.clear();
-    MOTOR_SetPower(0);
-}
-
-void MOTOR_SetPower(int power)
-{
-    if (power > 0)
-    {
-        digitalWrite(MOTOR_CW, LOW);
-        digitalWrite(MOTOR_CCW, HIGH);
-        analogWrite(MOTOR_PWM, power);
-    }
-    else
-    {
-        digitalWrite(MOTOR_CW, HIGH);
-        digitalWrite(MOTOR_CCW, LOW);
-        analogWrite(MOTOR_PWM, power);
-    }
-}
-
-void MOTOR_SetTarget(float target)
-{
-    y_tar_pos = target;
-//    motor_pid.setTarget(target / y_to_mm);
-//    isReachTarget = false;
-}
-
-bool MOTOR_Update()
-{
-    motor_pid.setTarget(y_tar_pos / y_to_mm);
-    MOTOR_SetPower((int)motor_pid.calc((float)encoder_count));
-//    if (abs(motor_pid.input_now - motor_pid.output_now) < 5.0f && !isReachTarget)
-//    {
-//        isReachTarget = true;
-//        return true;
-//    }
-//    else
-//        return false;
-//    Serial.print(motor_pid.target_now);
-//    Serial.print(",");
-//    Serial.print(motor_pid.input_now);
-//    Serial.print(",");
-//    Serial.println(motor_pid.output_now);
-}
-
-bool MOTOR_SetUnitConvert(float y)
-{
-    y_to_mm = y;
-}
 
 void Motor::init()
 {
@@ -103,7 +36,7 @@ void Motor::setTarget(float target)
 
 void Motor::update()
 {
-    setPower((int)_pid.calc((float)encoder_count));
+    setPower((int)_pid.calc((float)_encoder.getCount()));
     if (abs(_pid.input_now - _pid.target_now) < 5.0f)
         _is_reach = true;
     else
@@ -118,7 +51,7 @@ void Motor::update()
 
 void Motor::clear()
 {
-    encoder_count = 0;
+    _encoder.clear();
     _pid.clear();
     setPower(0);
 }

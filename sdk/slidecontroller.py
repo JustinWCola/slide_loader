@@ -39,8 +39,8 @@ class SlideController(object):
         self.x_tar_pos = 0
         self.z_tar_pos = 0
 
-        self.delivery_reach = 0
-        self.loader_reach = 0
+        self.delivery_reach = False
+        self.loader_reach = False
         self.key = [Key.none, Key.none, Key.none, Key.none]
         self.led = [Color.red, Color.red, Color.red, Color.red]
         self.serial = serial.Serial('COM14', 115200, timeout=0.01)
@@ -57,7 +57,7 @@ class SlideController(object):
     def set_delivery_rev_point(self, x, z):
         self.x_tar_pos += x
         self.z_tar_pos += z
-        while self.delivery_reach == 0:
+        while not self.delivery_reach:
             self.serial.write(b"\xA1" + b"\xB2" + struct.pack("<ff", x, z))
             time.sleep(1)
 
@@ -75,7 +75,7 @@ class SlideController(object):
 
     def set_loader_point(self, y):
         self.serial.write(b"\xA1" + b"\xB3" + struct.pack("<f", y))
-        while self.loader_reach == 0:
+        while not self.loader_reach:
             time.sleep(1)
 
     def set_led_color(self, led):
@@ -110,10 +110,15 @@ class SlideController(object):
                     self.x_now_pos = struct.unpack("<f", self.serial.read(4))
                     self.z_now_pos = struct.unpack("<f", self.serial.read(4))
                 elif cmd_id == b"\xC2":
-                    self.delivery_reach = self.serial.read()
-                    print(self.delivery_reach)
+                    if self.serial.read() == b"\x01":
+                        self.delivery_reach = True
+                    else:
+                        self.delivery_reach = False
                 elif cmd_id == b"\xC3":
-                    self.loader_reach = self.serial.read()
+                    if self.serial.read() == b"\x01":
+                        self.loader_reach = True
+                    else:
+                        self.loader_reach = False
                 elif cmd_id == b"\xC4":
                     self.key = struct.unpack("<cccc", self.serial.read(4))
                     for i in range(0, 4):

@@ -4,19 +4,31 @@
 #include <Arduino.h>
 #include <encoder.h>
 
-volatile long int encoder_count;
-
-void ENCODER_Update()
+void Encoder::init()
 {
-    if(digitalRead(ENCODER_B) == HIGH)
-        encoder_count++;
-    else
-        encoder_count--;
+    pinMode(_a_pin,INPUT);
+    pinMode(_b_pin,INPUT);
 }
 
-void ENCODER_Init()
+void Encoder::update()
 {
-    pinMode(ENCODER_A,INPUT);
-    pinMode(ENCODER_B,INPUT);
-    attachInterrupt(digitalPinToInterrupt(ENCODER_A), ENCODER_Update, RISING);
+    if(digitalRead(_b_pin) == HIGH)
+        _count++;
+    else
+        _count--;
+}
+
+void Encoder::clear()
+{
+    _count = 0;
+}
+
+uint8_t Encoder::getIntPin()
+{
+    return _a_pin;
+}
+
+int32_t Encoder::getCount()
+{
+    return _count;
 }

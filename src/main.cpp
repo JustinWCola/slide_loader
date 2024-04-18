@@ -13,13 +13,19 @@ Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 Key key[4]{14,15,16,17};
 Key sw(14);
 
-//Pid motor_pid(5,0,0.5);
-//Motor motor(8,1,9,motor_pid);
+Encoder motor_encoder(2,3);
+Pid motor_pid(5,0,0.5);
+Motor motor(8,1,9,motor_encoder,motor_pid);
 
 void TaskSerial(void *param);
 void TaskDelivery(void *param);
 void TaskLoader(void *param);
 void TaskKey(void *param);
+void encoderUpdate()
+{
+    motor_encoder.update();
+}
+
 
 void setup()
 {
@@ -32,27 +38,28 @@ void setup()
     //初始化串口, Serial: USB
     Serial.begin(115200);
     delay(1000);
-    //初始化限位开关
+    //初始化限位开关, D0
     sw.init();
     //初始化电机编码器, D2(A相) D3(B相)
-    ENCODER_Init();
+    motor_encoder.init();
+    attachInterrupt(digitalPinToInterrupt(motor_encoder.getIntPin()),encoderUpdate,RISING);
     //初始化电机PWM, D8(CW) D1(CCW) D9(PWM)
-    MOTOR_Init();
-    //电机位置归零
-    while (sw.getKey() != HIGH)
-        MOTOR_SetPower(-5);
-    MOTOR_Clear();
-    //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    CANOPEN.begin(CanBitRate::BR_1000k);
-    //初始化伺服电机
-    delivery.init();
+    motor.init();
+//    //电机位置归零
+//    while (sw.getKey() != HIGH)
+//        motor.setPower(-5);
+//    motor.clear();
+//    //初始化CAN通信, D4(CANTX0) D5(CANRX0)
+//    CANOPEN.begin(CanBitRate::BR_1000k);
+//    //初始化伺服电机
+//    delivery.init();
 
-    xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 1, nullptr);
-    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
-    xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
-//    xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
-
-    vTaskStartScheduler();
+//    xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 1, nullptr);
+//    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
+//    xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
+////    xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
+//
+//    vTaskStartScheduler();
 }
 
 void TaskSerial(void *param)
@@ -106,7 +113,7 @@ void TaskSerial(void *param)
                         Serial.readBytes(rx_data,4);
                         memcpy(&y, rx_data, 4);
 
-                        MOTOR_SetTarget(y);
+                        motor.setTarget(y);
                         break;
                     case 0xB4:
                         Serial.readBytes(rx_data,4);
@@ -122,7 +129,7 @@ void TaskSerial(void *param)
                         memcpy(&z,rx_data + 8, 4);
                         
                         delivery.setUnitConvert(x,z);
-                        MOTOR_SetUnitConvert(y);
+                        motor.setUnitConvert(y);
                         break;
                 }
             }
@@ -144,24 +151,7 @@ void TaskLoader(void *param)
 {
     while(1)
     {
-        MOTOR_Update();
-//        if(MOTOR_Update())
-//        {
-//            uint8_t tx_data[3];
-//            tx_data[0] = 0xA1;
-//            tx_data[1] = 0xC3;
-//            tx_data[2] = 0x01;
-//            Serial.write(tx_data,3);
-//        }
-//        else
-//        {
-//            uint8_t tx_data[3];
-//            tx_data[0] = 0xA1;
-//            tx_data[1] = 0xC3;
-//            tx_data[2] = 0x00;
-//            Serial.write(tx_data,3);
-//        }
-
+        motor.update();
         vTaskDelay(5/portTICK_PERIOD_MS);
     }
 }
@@ -203,10 +193,16 @@ void TaskKey(void *param)
     }
 }
 
+bool a = true;
 
 void loop()
 {
-//    delivery.setAbsPoint(200,0);
-//    delay(1000);
+    uint8_t tx_data[10];
+    tx_data[0] = 0xA1;
+    tx_data[1] = 0xC2;
+    tx_data[2] = a;
+    Serial.write(tx_data,3);
+    delay(1000);
+    a =! a;
 }
 

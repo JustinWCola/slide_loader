@@ -5,13 +5,21 @@
 #ifndef ENCODER_H
 #define ENCODER_H
 
-#define ENCODER_A 2
-#define ENCODER_B 3
+class Encoder
+{
+public:
+    Encoder(uint8_t a_pin, uint8_t b_pin):
+    _a_pin(a_pin), _b_pin(b_pin){}
 
-#define ENCODER_PULSE 10
-
-extern volatile long int encoder_count;
-
-void ENCODER_Init();
+    void init();
+    void update();
+    void clear();
+    uint8_t getIntPin();
+    int32_t getCount();
+private:
+    uint8_t _a_pin;
+    uint8_t _b_pin;
+    int32_t _count = 0;
+};
 
 #endif //ENCODER_H
