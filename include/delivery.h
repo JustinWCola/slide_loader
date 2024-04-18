@@ -33,18 +33,28 @@ public:
     bool setUnitConvert(float x, float z);
 
     bool getAbsPoint();
-    bool getReach();
+    bool update();
 
 private:
     CANopen _can;
     Servo _axis_x{_can, 1};
     Servo _axis_z{_can, 2};
 
-    float _pos_x;
-    float _pos_z;
+    float _x_tar_pos = 305.5;
+    float _z_tar_pos = 116.2;
+
+    float _x_now_pos;
+    float _z_now_pos;
 
     float _x_to_mm = X_PULSE_TO_MM;
     float _z_to_mm = Z_PULSE_TO_MM;
+
+    bool _is_reach = false;
+
+    static inline float LIMIT(float var, float max, float min)
+    {
+        return ((var) < (min) ? (min) : ((var) > (max) ? (max) : (var)));
+    }
 };
 
 #endif //DELIVERY_H

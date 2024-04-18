@@ -19,8 +19,8 @@ class Key(object):
 
 class SlideController(object):
     def __init__(self):
-        self.x_start = 0  # 装载仓X原点
-        self.z_start = 0  # 装载仓Z原点
+        self.x_start = 309.5  # 装载仓X原点
+        self.z_start = 115.8  # 装载仓Z原点
 
         self.x_gap = 75  # 装载仓X间隔
         self.z_gap = 10  # 装载仓Z间隔
@@ -29,7 +29,7 @@ class SlideController(object):
         self.z_end = 100  # 载物台Z位置
 
         self.y_push = 100  # 推杆行程
-        self.z_lift = 5  # 抬升行程
+        self.z_lift = 4  # 抬升行程
 
         self.queue = queue.PriorityQueue()
 
@@ -39,28 +39,27 @@ class SlideController(object):
         self.x_tar_pos = 0
         self.z_tar_pos = 0
 
-        self.delivery_reach = False
-        self.loader_reach = False
+        self.delivery_reach = 0
+        self.loader_reach = 0
         self.key = [Key.none, Key.none, Key.none, Key.none]
         self.led = [Color.red, Color.red, Color.red, Color.red]
-        self.serial = serial.Serial('COM14', 115200)
-        time.sleep(2)
+        self.serial = serial.Serial('COM14', 115200, timeout=0.01)
 
         self.set_led_color(self.led)
 
     def set_delivery_abs_point(self, x, z):
         self.x_tar_pos = x
         self.z_tar_pos = z
-        self.serial.write(b"\xA1" + b"\xB1" + struct.pack("<ff", x, z))
-        while not self.delivery_reach:
-            time.sleep(0.2)
+        while self.delivery_reach == 0:
+            self.serial.write(b"\xA1" + b"\xB1" + struct.pack("<ff", x, z))
+            time.sleep(1)
 
     def set_delivery_rev_point(self, x, z):
         self.x_tar_pos += x
         self.z_tar_pos += z
-        self.serial.write(b"\xA1" + b"\xB2" + struct.pack("<ff", x, z))
-        while not self.delivery_reach:
-            time.sleep(0.2)
+        while self.delivery_reach == 0:
+            self.serial.write(b"\xA1" + b"\xB2" + struct.pack("<ff", x, z))
+            time.sleep(1)
 
     def set_delivery_abs_x(self, x):
         self.set_delivery_abs_point(x, self.z_tar_pos)
@@ -76,8 +75,8 @@ class SlideController(object):
 
     def set_loader_point(self, y):
         self.serial.write(b"\xA1" + b"\xB3" + struct.pack("<f", y))
-        while not self.loader_reach:
-            time.sleep(0.2)
+        while self.loader_reach == 0:
+            time.sleep(1)
 
     def set_led_color(self, led):
         self.serial.write(b"\xA1" + b"\xB4" + led[0] + led[1] + led[2] + led[3])
@@ -112,6 +111,7 @@ class SlideController(object):
                     self.z_now_pos = struct.unpack("<f", self.serial.read(4))
                 elif cmd_id == b"\xC2":
                     self.delivery_reach = self.serial.read()
+                    print(self.delivery_reach)
                 elif cmd_id == b"\xC3":
                     self.loader_reach = self.serial.read()
                 elif cmd_id == b"\xC4":
@@ -154,11 +154,21 @@ class SlideController(object):
         self.set_led_color(self.led)
 
     def select_loader(self):
-        # while True:
-        time.sleep(2)
-        self.set_loader_point(240)
-        time.sleep(2)
-
+        # 载玻片仓原点309.5 115.8 伸缩长度5-240 层间距4
+        # self.set_delivery_abs_point(309.5, 107.8)
+        # self.set_delivery_abs_point(309.5, 111.8)
+        # self.set_delivery_abs_point(309.5, 115.8)
+        # self.set_loader_point(230.0)
+        # self.set_delivery_abs_point(309.5, 120.2)
+        # self.set_loader_point(230.0)
+        self.set_loader_point(10.0)
+        # self.set_loader_point(100.0)
+        # 显微镜原点6 108.85
+        # self.set_delivery_abs_point(6, 108.85)
+        # self.set_loader_point(228.0)
+        # self.set_delivery_abs_point(6, 114.35)
+        # self.set_loader_point(10.0)
+        time.sleep(1)
         # while True:
         #     if not self.queue.empty():
         #         self.start_loader(self.queue.get()[1])
@@ -170,4 +180,3 @@ if __name__ == '__main__':
     main_thread = Thread(target=sc.select_loader)
     serial_thread.start()
     main_thread.start()
-

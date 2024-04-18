@@ -53,7 +53,7 @@ void Pid::ramp()
 
     if (target_now != target_last)
         ramp_flag = true;
-    if (ramp_flag == true)
+    if (ramp_flag)
     {
         ramp_target = target_now;
         target_now = target_last;
