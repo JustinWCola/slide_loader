@@ -45,21 +45,21 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(motor_encoder.getIntPin()),encoderUpdate,RISING);
     //初始化电机PWM, D8(CW) D1(CCW) D9(PWM)
     motor.init();
-//    //电机位置归零
-//    while (sw.getKey() != HIGH)
-//        motor.setPower(-5);
-//    motor.clear();
-//    //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-//    CANOPEN.begin(CanBitRate::BR_1000k);
-//    //初始化伺服电机
-//    delivery.init();
+    //电机位置归零
+    while (sw.getKey() != HIGH)
+        motor.setPower(-5);
+    motor.clear();
+    //初始化CAN通信, D4(CANTX0) D5(CANRX0)
+    CANOPEN.begin(CanBitRate::BR_1000k);
+    //初始化伺服电机
+    delivery.init();
 
-//    xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 1, nullptr);
-//    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
-//    xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
-////    xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
-//
-//    vTaskStartScheduler();
+    xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 1, nullptr);
+    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
+    xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
+//    xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
+
+    vTaskStartScheduler();
 }
 
 void TaskSerial(void *param)
@@ -197,12 +197,6 @@ bool a = true;
 
 void loop()
 {
-    uint8_t tx_data[10];
-    tx_data[0] = 0xA1;
-    tx_data[1] = 0xC2;
-    tx_data[2] = a;
-    Serial.write(tx_data,3);
-    delay(1000);
-    a =! a;
+
 }
 
