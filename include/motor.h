@@ -8,13 +8,11 @@
 #include <pid.h>
 #include <encoder.h>
 
-#define MOTOR_RATIO 105
-#define MOTOR_RADIUS 10
 #define ENCODER_PULSE 10
 
 class Motor{
 public:
-    Motor(uint8_t cw_pin, uint8_t ccw_pin, uint8_t pwm_pin, Encoder encoder, Pid pid):
+    Motor(uint8_t cw_pin, uint8_t ccw_pin, uint8_t pwm_pin, Encoder* encoder, Pid* pid):
     _cw_pin(cw_pin),_ccw_pin(ccw_pin),_pwm_pin(pwm_pin), _encoder(encoder),_pid(pid){}
 
     void init();
@@ -25,19 +23,21 @@ public:
     void setUnitConvert(float y);
 
 private:
-    Encoder _encoder;
-    Pid _pid;
+    Encoder* _encoder;
+    Pid* _pid;
 
     uint8_t _cw_pin;
     uint8_t _ccw_pin;
     uint8_t _pwm_pin;
 
     bool _is_reach = false;
+    uint32_t _reach_time = 0;
 
-    float _ratio = MOTOR_RADIUS;
-    float _radius = MOTOR_RATIO;
+    float _radius = 10.0f;
+    float _ratio = 105.0f;
+    float _pulse = 10.0f;
 
-    float _y_to_mm = 2 * (float)PI * _radius / _ratio / ENCODER_PULSE;
+    float _y_to_mm = 2 * (float)PI * _radius / _ratio / _pulse;
 };
 
 #endif //MOTOR_H

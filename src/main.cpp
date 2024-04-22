@@ -11,11 +11,11 @@ CANopen CANOPEN;
 Delivery delivery(CANOPEN);
 Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 Key key[4]{14,15,16,17};
-Key sw(14);
+Key sw(0);
 
 Encoder motor_encoder(2,3);
 Pid motor_pid(5,0,0.5);
-Motor motor(8,1,9,motor_encoder,motor_pid);
+Motor motor(8,1,9,&motor_encoder,&motor_pid);
 
 void TaskSerial(void *param);
 void TaskDelivery(void *param);
@@ -57,7 +57,7 @@ void setup()
     xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 1, nullptr);
     xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
     xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
-//    xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
+    // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
     vTaskStartScheduler();
 }
@@ -112,7 +112,8 @@ void TaskSerial(void *param)
                     case 0xB3:
                         Serial.readBytes(rx_data,4);
                         memcpy(&y, rx_data, 4);
-
+                        // Serial.print("loader rev:");
+                        // Serial.println(y);
                         motor.setTarget(y);
                         break;
                     case 0xB4:
@@ -192,8 +193,6 @@ void TaskKey(void *param)
         vTaskDelay(100/portTICK_PERIOD_MS);
     }
 }
-
-bool a = true;
 
 void loop()
 {

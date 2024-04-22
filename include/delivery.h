@@ -40,8 +40,8 @@ private:
     Servo _axis_x{_can, 1};
     Servo _axis_z{_can, 2};
 
-    float _x_tar_pos = 305.5;
-    float _z_tar_pos = 116.2;
+    float _x_tar_pos = 309.5;
+    float _z_tar_pos = 115.8;
 
     float _x_now_pos;
     float _z_now_pos;

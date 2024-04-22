@@ -43,7 +43,7 @@ public:
     float target_now = 0;           //当前目标值
     float output_now = 0;           //当前输出值
 
-    float ramp_step = 6;           //斜坡步进值（加速度）
+    float ramp_step = 10;           //斜坡步进值（加速度）
 
 private:
     float _kp = 0;                   //比例项系数
