@@ -52,10 +52,12 @@ class LoaderController(object):
     def set_delivery_abs_point(self, x, z):
         self.x_tar_pos = x
         self.z_tar_pos = z
+        self.delivery_reach = False
         while not self.delivery_reach:
             self.serial.write(b"\xA1" + b"\xB1" + struct.pack("<ff", x, z))
             time.sleep(1)
         self.delivery_reach = False
+        time.sleep(1)
 
     def set_delivery_rev_point(self, x, z):
         self.x_tar_pos += x
@@ -78,10 +80,14 @@ class LoaderController(object):
         self.set_delivery_rev_point(0, z)
 
     def set_loader_point(self, y):
-        while not self.loader_reach:
-            self.serial.write(b"\xA1" + b"\xB3" + struct.pack("<f", y))
-            time.sleep(1)
-        self.loader_reach = False
+        time.sleep(2)
+        self.serial.write(b"\xA1" + b"\xB3" + struct.pack("<f", y))
+        time.sleep(2)
+
+        # while not self.loader_reach:
+        #     self.serial.write(b"\xA1" + b"\xB3" + struct.pack("<f", y))
+        #     time.sleep(1)
+        # self.loader_reach = False
 
     def set_led_color(self, led):
         self.serial.write(b"\xA1" + b"\xB4" + led[0] + led[1] + led[2] + led[3])
@@ -120,12 +126,12 @@ class LoaderController(object):
                         self.delivery_reach = True
                     else:
                         self.delivery_reach = False
+                    print(self.delivery_reach)
                 elif cmd_id == b"\xC3":
                     if self.serial.read() == b"\x01":
                         self.loader_reach = True
                     else:
                         self.loader_reach = False
-                    print(self.loader_reach)
                 elif cmd_id == b"\xC4":
                     self.key = struct.unpack("<cccc", self.serial.read(4))
                     for i in range(0, 4):
@@ -173,23 +179,21 @@ class MainController(object):
         self.loader.set_led_color(self.loader.led)
 
     def select_loader(self):
-
-        self.loader.set_loader_point(10.0)
         # 载玻片仓原点309.5 115.8 伸缩长度5-240 层间距4
-        # # self.loader.set_delivery_abs_point(309.5, 107.8)
-        # self.loader.set_delivery_abs_point(309.5, 115.8)
-        # # self.loader.set_loader_point(230.0)
-        # self.loader.set_delivery_abs_point(309.5, 111.8)
-        # # self.loader.set_delivery_abs_point(309.5, 120.2)
-        # # self.loader.set_loader_point(230.0)
-        # # self.loader.set_loader_point(10.0)
-        # # self.loader.set_loader_point(100.0)
+        # self.loader.set_delivery_abs_point(309.5, 107.8)
+        self.loader.set_delivery_abs_point(309.5, 115.8)
+        self.loader.set_loader_point(230.0)
+        self.loader.set_delivery_abs_point(309.5, 111.8)
+        # self.loader.set_delivery_abs_point(309.5, 120.2)
+        # self.loader.set_loader_point(230.0)
+        self.loader.set_loader_point(10.0)
+        # self.loader.set_loader_point(100.0)
         # # 显微镜原点6 108.85
-        # self.loader.set_delivery_abs_point(6, 108.85)
-        # # self.loader.set_loader_point(228.0)
-        # self.loader.set_delivery_abs_point(6, 114.35)
-        # # self.loader.set_loader_point(10.0)
-        #
+        self.loader.set_delivery_abs_point(6, 108.85)
+        self.loader.set_loader_point(228.0)
+        self.loader.set_delivery_abs_point(6, 114.35)
+        self.loader.set_loader_point(10.0)
+
         # self.loader.set_delivery_abs_point(6, 114.35)
         # self.loader.set_delivery_abs_point(6, 108.85)
         # self.loader.set_delivery_abs_point(309.5, 115.8)

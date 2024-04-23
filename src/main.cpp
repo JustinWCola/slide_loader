@@ -50,12 +50,12 @@ void setup()
         motor.setPower(-5);
     motor.clear();
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    // CANOPEN.begin(CanBitRate::BR_1000k);
-    // //初始化伺服电机
-    // delivery.init();
+    CANOPEN.begin(CanBitRate::BR_1000k);
+    //初始化伺服电机
+    delivery.init();
 
     xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    // xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
     xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
