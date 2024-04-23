@@ -109,7 +109,7 @@ class LoaderController(object):
         # byte 4 key2
         # byte 5 key3
         while True:
-            # print(self.serial.readline())
+            # print(self.serial.readline().decode("utf-8"))
             if self.serial.read() == b"\xA1":
                 cmd_id = self.serial.read()
                 if cmd_id == b"\xC1":
@@ -125,6 +125,7 @@ class LoaderController(object):
                         self.loader_reach = True
                     else:
                         self.loader_reach = False
+                    print(self.loader_reach)
                 elif cmd_id == b"\xC4":
                     self.key = struct.unpack("<cccc", self.serial.read(4))
                     for i in range(0, 4):
@@ -172,25 +173,27 @@ class MainController(object):
         self.loader.set_led_color(self.loader.led)
 
     def select_loader(self):
-        # 载玻片仓原点309.5 115.8 伸缩长度5-240 层间距4
-        # self.loader.set_delivery_abs_point(309.5, 107.8)
-        self.loader.set_delivery_abs_point(309.5, 115.8)
-        # self.loader.set_loader_point(230.0)
-        self.loader.set_delivery_abs_point(309.5, 111.8)
-        # self.loader.set_delivery_abs_point(309.5, 120.2)
-        # self.loader.set_loader_point(230.0)
-        # self.loader.set_loader_point(10.0)
-        # self.loader.set_loader_point(100.0)
-        # 显微镜原点6 108.85
-        self.loader.set_delivery_abs_point(6, 108.85)
-        # self.loader.set_loader_point(228.0)
-        self.loader.set_delivery_abs_point(6, 114.35)
-        # self.loader.set_loader_point(10.0)
 
-        self.loader.set_delivery_abs_point(6, 114.35)
-        self.loader.set_delivery_abs_point(6, 108.85)
-        self.loader.set_delivery_abs_point(309.5, 115.8)
-        self.loader.set_delivery_abs_point(309.5, 120.2)
+        self.loader.set_loader_point(10.0)
+        # 载玻片仓原点309.5 115.8 伸缩长度5-240 层间距4
+        # # self.loader.set_delivery_abs_point(309.5, 107.8)
+        # self.loader.set_delivery_abs_point(309.5, 115.8)
+        # # self.loader.set_loader_point(230.0)
+        # self.loader.set_delivery_abs_point(309.5, 111.8)
+        # # self.loader.set_delivery_abs_point(309.5, 120.2)
+        # # self.loader.set_loader_point(230.0)
+        # # self.loader.set_loader_point(10.0)
+        # # self.loader.set_loader_point(100.0)
+        # # 显微镜原点6 108.85
+        # self.loader.set_delivery_abs_point(6, 108.85)
+        # # self.loader.set_loader_point(228.0)
+        # self.loader.set_delivery_abs_point(6, 114.35)
+        # # self.loader.set_loader_point(10.0)
+        #
+        # self.loader.set_delivery_abs_point(6, 114.35)
+        # self.loader.set_delivery_abs_point(6, 108.85)
+        # self.loader.set_delivery_abs_point(309.5, 115.8)
+        # self.loader.set_delivery_abs_point(309.5, 120.2)
 
         time.sleep(1)
         # while True:

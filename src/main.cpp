@@ -14,7 +14,7 @@ Key key[4]{14,15,16,17};
 Key sw(0);
 
 Encoder motor_encoder(2,3);
-Pid motor_pid(5,0,0.5);
+Pid motor_pid(1,0,0.1);
 Motor motor(8,1,9,&motor_encoder,&motor_pid);
 
 void TaskSerial(void *param);
@@ -50,12 +50,12 @@ void setup()
         motor.setPower(-5);
     motor.clear();
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    CANOPEN.begin(CanBitRate::BR_1000k);
-    //初始化伺服电机
-    delivery.init();
+    // CANOPEN.begin(CanBitRate::BR_1000k);
+    // //初始化伺服电机
+    // delivery.init();
 
-    xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 1, nullptr);
-    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 1, nullptr);
+    xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 2, nullptr);
+    // xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
     xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
@@ -97,23 +97,22 @@ void TaskSerial(void *param)
                 {
                     case 0xB1:
                         Serial.readBytes(rx_data, 8);
-                        memcpy(&x,rx_data, 4);
-                        memcpy(&z,rx_data + 4, 4);
+                        memcpy(&x, rx_data, 4);
+                        memcpy(&z, rx_data + 4, 4);
 
                         delivery.setAbsPoint(x, z);
                         break;
                     case 0xB2:
                         Serial.readBytes(rx_data, 8);
-                        memcpy(&x,rx_data, 4);
-                        memcpy(&z,rx_data + 4, 4);
+                        memcpy(&x, rx_data, 4);
+                        memcpy(&z, rx_data + 4, 4);
 
                         delivery.setRevPoint(x, z);
                         break;
                     case 0xB3:
                         Serial.readBytes(rx_data,4);
                         memcpy(&y, rx_data, 4);
-                        // Serial.print("loader rev:");
-                        // Serial.println(y);
+
                         motor.setTarget(y);
                         break;
                     case 0xB4:
@@ -150,10 +149,13 @@ void TaskDelivery(void *param)
 
 void TaskLoader(void *param)
 {
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
     while(1)
     {
         motor.update();
-        vTaskDelay(5/portTICK_PERIOD_MS);
+
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5));
     }
 }
 

@@ -46,12 +46,13 @@ void Motor::update()
     else
         _is_reach = false;
 
-    // uint8_t tx_data[3];
-    // tx_data[0] = 0xA1;
-    // tx_data[1] = 0xC3;
-    // tx_data[2] = _is_reach;
-    // Serial.write(tx_data,3);
+    uint8_t tx_data[3];
+    tx_data[0] = 0xA1;
+    tx_data[1] = 0xC3;
+    tx_data[2] = _is_reach;
+    Serial.write(tx_data,3);
 
+    // _pid->calc((float)_encoder->getCount());
     // Serial.print(_pid->target_now);
     // Serial.print(",");
     // Serial.print(_pid->input_now);

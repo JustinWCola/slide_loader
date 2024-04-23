@@ -43,8 +43,8 @@ private:
     float _x_tar_pos = 309.5;
     float _z_tar_pos = 115.8;
 
-    float _x_now_pos;
-    float _z_now_pos;
+    float _x_now_pos = 0;
+    float _z_now_pos = 0;
 
     float _x_to_mm = X_PULSE_TO_MM;
     float _z_to_mm = Z_PULSE_TO_MM;
