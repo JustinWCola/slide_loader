@@ -9,7 +9,7 @@
  */
 void Servo::init()
 {
-    _can->read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
+    _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
 
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
     setMotionMode(eMotionMode::PP);//设置为轮廓位置模式
@@ -25,11 +25,11 @@ void Servo::init()
  */
 bool Servo::setCtrlMode(eCtrlMode ctrl_mode)
 {
-    _can->write(_id, I_CTRL_PARAM, SI_CTRL_MODE, (uint16_t)ctrl_mode);
+    _can.write(_id, I_CTRL_PARAM, SI_CTRL_MODE, (uint16_t)ctrl_mode);
     uint16_t new_mode = 0;
     do
     {
-        _can->read(_id, I_CTRL_PARAM, SI_CTRL_MODE, (uint32_t*)&new_mode);
+        _can.read(_id, I_CTRL_PARAM, SI_CTRL_MODE, (uint32_t*)&new_mode);
         new_mode = (uint16_t)new_mode;
         Serial.print("setting ctrl mode, ID:");
         Serial.println(_id);
@@ -44,11 +44,11 @@ bool Servo::setCtrlMode(eCtrlMode ctrl_mode)
  */
 bool Servo::setMotionMode(eMotionMode motion_mode)
 {
-    _can->write(_id, I_MOTION_MODE, 0, (uint8_t)motion_mode);
+    _can.write(_id, I_MOTION_MODE, 0, (uint8_t)motion_mode);
     uint8_t new_mode = 0x00;
     do
     {
-        _can->read(_id, I_MOTION_MODE, 0, (uint32_t*)&new_mode);
+        _can.read(_id, I_MOTION_MODE, 0, (uint32_t*)&new_mode);
         new_mode = (uint8_t)new_mode;
         Serial.print("setting motion mode, ID:");
         Serial.println(_id);
@@ -61,7 +61,7 @@ bool Servo::setMotionMode(eMotionMode motion_mode)
  */
 void Servo::setMotorReady()
 {
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)0x06);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x06);
     Serial.print("motor ready, ID:");
     Serial.println(_id);
 }
@@ -71,7 +71,7 @@ void Servo::setMotorReady()
  */
 void Servo::disableMotor()
 {
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)0x07);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x07);
     Serial.print("motor disable, ID:");
     Serial.println(_id);
 }
@@ -81,7 +81,7 @@ void Servo::disableMotor()
  */
 void Servo::enableMotor()
 {
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
     Serial.print("motor enable, ID:");
     Serial.println(_id);
 }
@@ -94,14 +94,14 @@ void Servo::enableMotor()
  */
 bool Servo::setAbsPosition(int32_t pos, uint32_t vel)
 {
-    _can->write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
+    _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
 //    can.write(id,I_PROFILE_VELOCITY,0,(uint32_t)velocity);
 //    can.write(id,I_END_VELOCITY,0,0x0);
 //    can.write(id,I_PROFILE_ACCELERATION,0,acc);
 //    can.write(id,I_PROFILE_DECELERATION,0,dec);
 
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
 
 //    Serial.print("setting point:");
 //    Serial.print(pos);
@@ -115,10 +115,10 @@ bool Servo::setAbsPosition(int32_t pos, uint32_t vel)
  */
 bool Servo::setAbsPosition(int32_t pos)
 {
-    _can->write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
+    _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
 
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
 
 //    Serial.print("setting point:");
 //    Serial.print(pos);
@@ -133,14 +133,14 @@ bool Servo::setAbsPosition(int32_t pos)
  */
 bool Servo::setRevPosition(int32_t pos, uint32_t vel)
 {
-    _can->write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
+    _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
 //    can.write(id,I_PROFILE_VELOCITY,0,(uint32_t)velocity);
 //    can.write(id,I_END_VELOCITY,0,0x0);
 //    can.write(id,I_PROFILE_ACCELERATION,0,acc);
 //    can.write(id,I_PROFILE_DECELERATION,0,dec);
 
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::RevPos);
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::RevPos + 0x10));
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::RevPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::RevPos + 0x10));
 
 //    Serial.print("setting point:");
 //    Serial.print(pos);
@@ -154,10 +154,10 @@ bool Servo::setRevPosition(int32_t pos, uint32_t vel)
  */
 bool Servo::setRevPosition(int32_t pos)
 {
-    _can->write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
+    _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
 
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::RevPos);
-    _can->write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::RevPos + 0x10));
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::RevPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::RevPos + 0x10));
 
 //    Serial.print("setting point:");
 //    Serial.print(pos);
@@ -171,13 +171,13 @@ bool Servo::setRevPosition(int32_t pos)
 int32_t Servo::getAbsPosition()
 {
     int32_t position;
-    _can->read(_id,I_NOW_POSITION,0,(uint32_t*)&position);
+    _can.read(_id,I_NOW_POSITION,0,(uint32_t*)&position);
     return position;
 }
 
 bool Servo::getReach()
 {
     uint16_t status;
-    _can->read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
+    _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
     return (status&(1<<10))>>10;
 }

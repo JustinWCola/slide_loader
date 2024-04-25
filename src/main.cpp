@@ -12,7 +12,6 @@ Delivery delivery(CANOPEN);
 
 Encoder motor_encoder(2,3);
 Pid motor_pid(1,0,0.1);
-//此处使用指针实例化Motor类的Encoder和Pid成员，因为中断服务函数只能
 Motor motor(8,1,9,&motor_encoder,&motor_pid);
 
 Key sw(0);
@@ -158,6 +157,7 @@ void TaskLoader(void *param)
     xLastWakeTime = xTaskGetTickCount();
     while(1)
     {
+        motor.setTarget(100);
         motor.update();
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5));
     }
