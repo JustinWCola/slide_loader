@@ -23,8 +23,8 @@ public:
     void setUnitConvert(float y);
 
 private:
-    Encoder* _encoder;
-    Pid* _pid;
+    Encoder *_encoder;
+    Pid *_pid;
 
     uint8_t _cw_pin;
     uint8_t _ccw_pin;

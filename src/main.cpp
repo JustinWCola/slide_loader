@@ -8,14 +8,16 @@
 #include <Arduino_FreeRTOS.h>
 
 CANopen CANOPEN;
-Delivery delivery(&CANOPEN);
-Led led[4]{{18,19},{12,11},{7,6},{5,4}};
-Key key[4]{14,15,16,17};
-Key sw(0);
+Delivery delivery(CANOPEN);
 
 Encoder motor_encoder(2,3);
 Pid motor_pid(1,0,0.1);
+//此处使用指针实例化Motor类的Encoder和Pid成员，因为中断服务函数只能
 Motor motor(8,1,9,&motor_encoder,&motor_pid);
+
+Key sw(0);
+Key key[4]{14,15,16,17};
+Led led[4]{{18,19},{13,12},{11,10},{7,6}};
 
 void TaskSerial(void *param);
 void TaskDelivery(void *param);
@@ -50,12 +52,15 @@ void setup()
         motor.setPower(-5);
     motor.clear();
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    CANOPEN.begin(CanBitRate::BR_1000k);
-    //初始化伺服电机
-    delivery.init();
+    // CANOPEN.begin(CanBitRate::BR_1000k);
+    // //初始化伺服电机
+    // delivery.init();
+
+    Serial.println("ready");
+    delay(2000);
 
     xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    // xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
     xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
@@ -154,7 +159,6 @@ void TaskLoader(void *param)
     while(1)
     {
         motor.update();
-
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5));
     }
 }

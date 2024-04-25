@@ -73,4 +73,3 @@ void Motor::setUnitConvert(float y)
 {
     _y_to_mm = y;
 }
-

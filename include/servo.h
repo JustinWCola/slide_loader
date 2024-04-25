@@ -54,7 +54,7 @@ typedef enum eTriggerMode : uint16_t
 class Servo
 {
 public:
-    Servo(CANopen* can, uint8_t id):_can(can),_id(id){}
+    Servo(CANopen& can, uint8_t id):_can(can),_id(id){}
 
     void init();
     bool setCtrlMode(eCtrlMode ctrl_mode);
@@ -73,7 +73,7 @@ public:
 
 private:
     uint8_t _id;
-    CANopen* _can;
+    CANopen _can;
 };
 
 #endif //SERVO_H
