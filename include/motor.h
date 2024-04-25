@@ -37,6 +37,7 @@ private:
     float _ratio = 105.0f;
     float _pulse = 10.0f;
 
+    float _target = 0;
     float _y_to_mm = 2 * (float)PI * _radius / _ratio / _pulse;
 };
 

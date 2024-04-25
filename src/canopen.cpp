@@ -161,7 +161,7 @@ bool CANopen::startOperational(uint8_t id)
     //进入操作状态指令
     send_msg_buffer[0] = 0x01; //NMT Msg
     send_msg_buffer[1] = id;
-    sendMsg(0x000,2);
+    sendMsg(0x0000,2);
     while (!recvMsg())
         Serial.println("starting operational");
     return true;

@@ -25,7 +25,7 @@
 class Delivery
 {
 public:
-    explicit Delivery(CANopen can) : _can(can){}
+    explicit Delivery(CANopen* can) : _can(can){}
 
     void init();
     bool setAbsPoint(float x, float z);
@@ -36,7 +36,7 @@ public:
     bool update();
 
 private:
-    CANopen _can;
+    CANopen* _can;
     Servo _axis_x{_can, 1};
     Servo _axis_z{_can, 2};
 

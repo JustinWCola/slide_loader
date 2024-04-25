@@ -31,17 +31,19 @@ void Motor::setPower(int power)
 
 void Motor::setTarget(float target)
 {
-    _pid->setTarget(target / _y_to_mm);
+    _target = target;
 }
 
 void Motor::update()
 {
+    _pid->setTarget(_target / _y_to_mm);
     setPower((int)_pid->calc((float)_encoder->getCount()));
+
     if (abs(_pid->input_now - _pid->target_now) < 5.0f)
         _reach_time++;
     else
         _reach_time = 0;
-    if(_reach_time > 200)
+    if(_reach_time > 20)
         _is_reach = true;
     else
         _is_reach = false;

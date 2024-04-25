@@ -8,7 +8,7 @@
 #include <Arduino_FreeRTOS.h>
 
 CANopen CANOPEN;
-Delivery delivery(CANOPEN);
+Delivery delivery(&CANOPEN);
 Led led[4]{{18,19},{12,11},{7,6},{5,4}};
 Key key[4]{14,15,16,17};
 Key sw(0);
