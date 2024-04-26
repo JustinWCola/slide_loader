@@ -51,6 +51,24 @@ typedef enum eTriggerMode : uint16_t
     RevPosRt = 0x6F,    //相对位置模式,立刻更新
 };  //触发模式
 
+#define I_ZERO_MODE         0x6098  //回零模式
+#define I_ZERO_VELOCITY     0x6099  //回零速度
+#define I_ZERO_ACCELERATION 0x609A  //回零加速度
+
+typedef enum eZeroVelocity : uint16_t
+{
+    FindSwitch = 0x01,  //查找开关（高速）
+    FindZero   = 0x02,  //查找零点（低速）
+};//回零速度
+
+#define I_STUCK_CHECK   0x2007  //堵转检测
+
+typedef enum eStuckCheck : uint16_t
+{
+    StuckTorque = 0x13,  //堵转转矩检测
+    StuckTime   = 0x15,  //堵转时间检测
+};//堵转检测
+
 class Servo
 {
 public:
@@ -63,6 +81,7 @@ public:
     void disableMotor();
     void enableMotor();
 
+    bool setZero(uint32_t vel, uint32_t acc, uint8_t trq, uint8_t time);
     bool setAbsPosition(int32_t pos, uint32_t vel);
     bool setAbsPosition(int32_t pos);
     bool setRevPosition(int32_t pos, uint32_t vel);

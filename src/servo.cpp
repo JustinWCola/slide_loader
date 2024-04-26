@@ -11,6 +11,7 @@ void Servo::init()
 {
     _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
 
+    disableMotor();
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
     setMotionMode(eMotionMode::PP);//设置为轮廓位置模式
     setMotorReady();
@@ -84,6 +85,42 @@ void Servo::enableMotor()
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x0F);
     Serial.print("motor enable, ID:");
     Serial.println(_id);
+}
+
+/**
+ * 设置电机回零
+ * @param vel 回零速度
+ * @param acc 回零加速度
+ * @param trq 堵转转矩
+ * @param time 堵转时间
+ * @return 回零完成
+ */
+bool Servo::setZero(uint32_t vel, uint32_t acc, uint8_t trq, uint8_t time)
+{
+    _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
+
+    disableMotor();
+    setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
+    setMotionMode(eMotionMode::HM);
+
+    _can.write(_id, I_ZERO_MODE, 0, (uint8_t)0x38);
+    _can.write(_id, I_ZERO_VELOCITY, eZeroVelocity::FindZero, (uint32_t)vel);
+    _can.write(_id, I_ZERO_ACCELERATION, 0, (uint16_t)acc);
+
+    _can.write(_id, I_STUCK_CHECK, eStuckCheck::StuckTorque, (uint16_t)trq);
+    _can.write(_id, I_STUCK_CHECK, eStuckCheck::StuckTime, (uint16_t)time);
+
+    setMotorReady();
+    disableMotor();
+    enableMotor();
+
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
+
+    while(!getReach())
+        break;
+
+    return true;
 }
 
 /**
