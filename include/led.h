@@ -20,8 +20,8 @@ public:
     void init();
     void setColor(eLedColor color);
 private:
-    uint8_t _rPin;
-    uint8_t _gPin;
+    uint8_t _rPin;  //红灯引脚
+    uint8_t _gPin;  //绿灯引脚
 };
 
 

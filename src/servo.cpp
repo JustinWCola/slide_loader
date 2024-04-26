@@ -175,6 +175,10 @@ int32_t Servo::getAbsPosition()
     return position;
 }
 
+/**
+ * 获取电机到达信号
+ * @return 是否到达
+ */
 bool Servo::getReach()
 {
     uint16_t status;

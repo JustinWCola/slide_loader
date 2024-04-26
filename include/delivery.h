@@ -28,19 +28,22 @@ public:
     explicit Delivery(CANopen& can) : _can(can){}
 
     void init();
-    bool setAbsPoint(float x, float z);
-    bool setRevPoint(float x, float z);
-    bool setUnitConvert(float x, float z);
+    void setAbsPoint(float x, float z);
+    void setRevPoint(float x, float z);
+    void setUnitConvert(float x, float z);
 
-    bool getAbsPoint();
-    bool update();
+    void update();
+    void send();
+
+private:
+    void getAbsPoint();
 
 private:
     CANopen _can;
     Servo _axis_x{_can, 1};
     Servo _axis_z{_can, 2};
 
-    float _x_tar_pos = 300;
+    float _x_tar_pos = 200;
     float _z_tar_pos = 100;
 
     float _x_now_pos = 0;
@@ -50,6 +53,7 @@ private:
     float _z_to_mm = Z_PULSE_TO_MM;
 
     bool _is_reach = false;
+    uint8_t _reach_time = 0;
 
     static inline float LIMIT(float var, float max, float min)
     {

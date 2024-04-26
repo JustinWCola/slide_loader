@@ -16,13 +16,14 @@ typedef enum eKeyStatus: uint8_t
 
 class Key{
 public:
+    Key() = default;
     Key(uint8_t pin):_pin(pin){}
 
     void init();
     PinStatus getKey();
 
 private:
-    uint8_t _pin;
+    uint8_t _pin;   //引脚
 };
 
 #endif //KEY_H

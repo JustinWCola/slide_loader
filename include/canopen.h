@@ -42,11 +42,11 @@ public:
     bool write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data);
     bool write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data);
 
-    bool formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index);
-    bool sendMsg(uint16_t id, uint8_t length);
+    void formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index);
+    void sendMsg(uint16_t id, uint8_t length);
     uint8_t recvMsg();
 
-    // NMT Messages: special message functions
+    // NMT消息
     bool startOperational(uint8_t id);
     bool resetNode(uint8_t id);
     bool sendSyncMsg(uint8_t id);

@@ -6,17 +6,30 @@
 uint8_t CANopen::send_msg_buffer[8]={0};
 uint8_t CANopen::recv_msg_buffer[8]={0};
 
+/**
+ * 开启CANopen通信链路
+ * @param can_bitrate 波特率
+ * @return 开启成功
+ */
 bool CANopen::begin(const CanBitRate can_bitrate)
 {
     if (!CAN.begin(can_bitrate))
     {
         Serial.println("CAN init failed");
-        for (;;) {}
+        return false;
     }
     Serial.println("CAN init ok");
     return true;
 }
 
+/**
+ * SDO方式读取CANopen节点数据
+ * @param id 节点ID
+ * @param index 索引
+ * @param sub_index 子索引
+ * @param data 数据指针，指向存储读到数据的变量
+ * @return 读取成功
+ */
 bool CANopen::read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data)
 {
     formMsg(SDO_REQUEST_READ, index, sub_index);
@@ -35,6 +48,14 @@ bool CANopen::read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data
     return true;
 }
 
+/**
+ * SDO方式写入CANopen节点数据
+ * @param id 节点ID
+ * @param index 索引
+ * @param sub_index 子索引
+ * @param data 数据
+ * @return 写入成功
+ */
 bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t data)
 {
     formMsg(SDO_REQUEST_WRITE_8BIT,index,sub_index);
@@ -81,23 +102,36 @@ bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data
         return false;
 }
 
-bool CANopen::formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index)
+/**
+ * 组成CANopen消息
+ * @param type_byte 请求命令符
+ * @param index 索引
+ * @param sub_index 子索引
+ */
+void CANopen::formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index)
 {
     send_msg_buffer[0] = type_byte;
     uint8_t *ptr = (uint8_t*)&index;
     send_msg_buffer[1] = ptr[0];
     send_msg_buffer[2] = ptr[1];
     send_msg_buffer[3] = sub_index;
-    return true;
 }
 
-bool CANopen::sendMsg(uint16_t id, uint8_t length)
+/**
+ * 发送CANopen消息
+ * @param id 节点ID
+ * @param length 长度
+ */
+void CANopen::sendMsg(uint16_t id, uint8_t length)
 {
     CanMsg const msg(CanStandardId(id), length, send_msg_buffer);
     CAN.write(msg);
-    return true;
 }
 
+/**
+ * 接收CANopen消息
+ * @return 应答命令符
+ */
 uint8_t CANopen::recvMsg() {
     // wait for message
     uint32_t startTime = millis();
@@ -156,6 +190,11 @@ uint8_t CANopen::recvMsg() {
     return 0;
 }
 
+/**
+ * 切换到操作模式
+ * @param id 节点ID
+ * @return 设切换成功
+ */
 bool CANopen::startOperational(uint8_t id)
 {
     //进入操作状态指令
@@ -167,6 +206,11 @@ bool CANopen::startOperational(uint8_t id)
     return true;
 }
 
+/**
+ * 重置节点
+ * @param id 节点ID
+ * @return 重置成功
+ */
 bool CANopen::resetNode(uint8_t id)
 {
     //rest application on the node
@@ -178,6 +222,11 @@ bool CANopen::resetNode(uint8_t id)
     return true;
 }
 
+/**
+ * 发送SYNC消息
+ * @param id 节点ID
+ * @return 发送成功
+ */
 bool CANopen::sendSyncMsg(uint8_t id)
 {
     //synchronous CANopen device

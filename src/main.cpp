@@ -12,9 +12,9 @@ Delivery delivery(CANOPEN);
 
 Encoder motor_encoder(2,3);
 Pid motor_pid(1,0,0.1);
-Motor motor(8,1,9,&motor_encoder,&motor_pid);
-
 Key sw(0);
+Motor motor(8,1,9,&motor_encoder,&motor_pid,&sw);
+
 Key key[4]{14,15,16,17};
 Led led[4]{{18,19},{13,12},{11,10},{7,6}};
 
@@ -46,21 +46,16 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(motor_encoder.getIntPin()),encoderUpdate,RISING);
     //初始化电机PWM, D8(CW) D1(CCW) D9(PWM)
     motor.init();
-    //电机位置归零
-    while (sw.getKey() != HIGH)
-        motor.setPower(-5);
-    motor.clear();
+    delay(1000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    // CANOPEN.begin(CanBitRate::BR_1000k);
-    // //初始化伺服电机
-    // delivery.init();
-
-    Serial.println("ready");
-    delay(2000);
+    CANOPEN.begin(CanBitRate::BR_1000k);
+    //初始化伺服电机
+    delivery.init();
+    delivery.init();
 
     xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    // xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
-    xTaskCreate(TaskLoader, "Loader", 128, nullptr, 1, nullptr);
+    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    xTaskCreate(TaskLoader, "Loader", 256, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
     vTaskStartScheduler();
@@ -70,27 +65,8 @@ void TaskSerial(void *param)
 {
     while(1)
     {
-        /*
-         * byte 0 start 0xA1
-         * byte 1 cmd id(delivery/loader/led)
-         *
-         * delivery abs: 0xB1
-         * byte 2-5 delivery x
-         * byte 6-9 delivery z
-         *
-         * delivery rev: 0xB2
-         * byte 2-5 delivery x
-         * byte 6-9 delivery z
-         *
-         * loader: 0xB3
-         * byte 2-5 loader distance
-         *
-         * led: 0xB4
-         * byte 2 led0
-         * byte 3 led1
-         * byte 4 led2
-         * byte 5 led3
-         */
+        //协议见README
+        static uint32_t send_time = 0;
         uint8_t rx_data[8] = {0};
         float x,y,z;
         if(Serial.available() > 0)
@@ -138,6 +114,12 @@ void TaskSerial(void *param)
                 }
             }
         }
+
+        if(send_time % 2 == 0)
+            delivery.send();
+        else if (send_time % 2 == 1)
+            motor.send();
+        send_time++;
         vTaskDelay(50/portTICK_PERIOD_MS);
     }
 }
@@ -147,7 +129,7 @@ void TaskDelivery(void *param)
     while(1)
     {
         delivery.update();
-        vTaskDelay(100/portTICK_PERIOD_MS);
+        vTaskDelay(50/portTICK_PERIOD_MS);
     }
 }
 
@@ -157,9 +139,8 @@ void TaskLoader(void *param)
     xLastWakeTime = xTaskGetTickCount();
     while(1)
     {
-        motor.setTarget(100);
         motor.update();
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5));
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
     }
 }
 
