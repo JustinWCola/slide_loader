@@ -44,7 +44,7 @@ private:
     Servo _axis_z{_can, 2};
 
     float _x_tar_pos = 200;
-    float _z_tar_pos = 100;
+    float _z_tar_pos = 50;
 
     float _x_now_pos = 0;
     float _z_now_pos = 0;

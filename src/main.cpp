@@ -51,7 +51,6 @@ void setup()
     CANOPEN.begin(CanBitRate::BR_1000k);
     //初始化伺服电机
     delivery.init();
-    delivery.init();
 
     xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 2, nullptr);
     xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);

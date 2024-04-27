@@ -9,9 +9,9 @@
  */
 void Delivery::init()
 {
-    _axis_x.setZero(2730,409600,50,1000);
+    _axis_x.setZero(50000,409600,500,10);
     _axis_x.init();
-    _axis_z.setZero(2730,409600,50,1000);
+    _axis_z.setZero(50000,409600,500,10);
     _axis_z.init();
 }
 

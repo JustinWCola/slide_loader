@@ -95,7 +95,7 @@ void Servo::enableMotor()
  * @param time 堵转时间
  * @return 回零完成
  */
-bool Servo::setZero(uint32_t vel, uint32_t acc, uint8_t trq, uint8_t time)
+bool Servo::setZero(uint32_t vel, uint32_t acc, uint16_t trq, uint16_t time)
 {
     _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
 
@@ -103,12 +103,12 @@ bool Servo::setZero(uint32_t vel, uint32_t acc, uint8_t trq, uint8_t time)
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
     setMotionMode(eMotionMode::HM);
 
-    _can.write(_id, I_ZERO_MODE, 0, (uint8_t)0x38);
-    _can.write(_id, I_ZERO_VELOCITY, eZeroVelocity::FindZero, (uint32_t)vel);
-    _can.write(_id, I_ZERO_ACCELERATION, 0, (uint16_t)acc);
+    _can.write(_id, I_ZERO_MODE, 0, (uint8_t)eZeroMode::NegativeStuck);
+    _can.write(_id, I_ZERO_VELOCITY, SI_LOW_VELOCITY, (uint32_t)vel);
+    _can.write(_id, I_ZERO_ACCELERATION, 0, (uint32_t)acc);
 
-    _can.write(_id, I_STUCK_CHECK, eStuckCheck::StuckTorque, (uint16_t)trq);
-    _can.write(_id, I_STUCK_CHECK, eStuckCheck::StuckTime, (uint16_t)time);
+    _can.write(_id, I_STUCK_CHECK, SI_STUCK_TORQUE, (uint16_t)trq);
+    _can.write(_id, I_STUCK_CHECK, SI_STUCK_TIME, (uint16_t)time);
 
     setMotorReady();
     disableMotor();
@@ -117,8 +117,12 @@ bool Servo::setZero(uint32_t vel, uint32_t acc, uint8_t trq, uint8_t time)
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
 
-    while(!getReach())
-        break;
+    uint16_t status;
+    while((status&(1<<12))>>12 == 0)
+    {
+        _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
+        delay(100);
+    }
 
     return true;
 }
