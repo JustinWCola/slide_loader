@@ -16,12 +16,16 @@ Key sw(0);
 Motor motor(8,1,9,&motor_encoder,&motor_pid,&sw);
 
 Key key[4]{14,15,16,17};
+static bool isKeyDetected;
+static uint8_t keyStatus[4];
 Led led[4]{{18,19},{13,12},{11,10},{7,6}};
 
-void TaskSerial(void *param);
-void TaskDelivery(void *param);
-void TaskLoader(void *param);
-void TaskKey(void *param);
+void taskSerial(void *param);
+void taskDelivery(void *param);
+void taskLoader(void *param);
+void taskKey(void *param);
+void keyUpdate();
+void keySend();
 void encoderUpdate()
 {
     motor_encoder.update();
@@ -46,21 +50,26 @@ void setup()
     attachInterrupt(digitalPinToInterrupt(motor_encoder.getIntPin()),encoderUpdate,RISING);
     //初始化电机PWM, D8(CW) D1(CCW) D9(PWM)
     motor.init();
-    delay(1000);
+    //电机归零
+    motor.setZeroInit();
+    // motor.setPower(1);
+    // delay(100);
+    // motor.setPower(0);
+    delay(3000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
     CANOPEN.begin(CanBitRate::BR_1000k);
     //初始化伺服电机
     delivery.init();
 
-    xTaskCreate(TaskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    xTaskCreate(TaskDelivery, "Delivery", 128, nullptr, 2, nullptr);
-    xTaskCreate(TaskLoader, "Loader", 256, nullptr, 1, nullptr);
+    xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
+    xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
     vTaskStartScheduler();
 }
 
-void TaskSerial(void *param)
+void taskSerial(void *param)
 {
     while(1)
     {
@@ -89,7 +98,7 @@ void TaskSerial(void *param)
                         delivery.setRevPoint(x, z);
                         break;
                     case 0xB3:
-                        Serial.readBytes(rx_data,4);
+                        Serial.readBytes(rx_data,8);
                         memcpy(&y, rx_data, 4);
 
                         motor.setTarget(y);
@@ -118,21 +127,24 @@ void TaskSerial(void *param)
             delivery.send();
         else if (send_time % 2 == 1)
             motor.send();
+        // else if (send_time % 3 == 2)
+        //     keySend();
         send_time++;
-        vTaskDelay(50/portTICK_PERIOD_MS);
+        vTaskDelay(20/portTICK_PERIOD_MS);
     }
 }
 
-void TaskDelivery(void *param)
+void taskDelivery(void *param)
 {
     while(1)
     {
-        delivery.update();
-        vTaskDelay(50/portTICK_PERIOD_MS);
+        if(motor.getReach())
+            delivery.update();
+        vTaskDelay(20/portTICK_PERIOD_MS);
     }
 }
 
-void TaskLoader(void *param)
+void taskLoader(void *param)
 {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
@@ -143,40 +155,46 @@ void TaskLoader(void *param)
     }
 }
 
-void TaskKey(void *param)
+void taskKey(void *param)
 {
     while(1)
     {
-        uint8_t keyPressed[4];
-        uint8_t lastKeyPressed[4];
-        uint8_t keyStatus[4];
-        bool isKeyDetected = false;
-        for(int i=0;i<4;i++)
+        keyUpdate();
+        vTaskDelay(50/portTICK_PERIOD_MS);
+    }
+}
+
+void keyUpdate()
+{
+    uint8_t keyPressed[4];
+    uint8_t lastKeyPressed[4];
+    isKeyDetected = false;
+    for(int i=0;i<4;i++)
+    {
+        lastKeyPressed[i] = keyPressed[i];
+        keyPressed[i] = key[i].getKey();
+        if(keyPressed[i] != lastKeyPressed[i])
         {
-            lastKeyPressed[i] = keyPressed[i];
-            keyPressed[i] = key[i].getKey();
-            if(keyPressed[i] != lastKeyPressed[i])
-            {
-                isKeyDetected = true;
-                if(lastKeyPressed[i] == LOW)
-                    keyStatus[i] = Pressed;
-                else
-                    keyStatus[i] = Released;
-            }
+            isKeyDetected = true;
+            if(lastKeyPressed[i] == LOW)
+                keyStatus[i] = Pressed;
             else
-                keyStatus[i] = None;
+                keyStatus[i] = Released;
         }
+        else
+            keyStatus[i] = None;
+    }
+}
 
-        if(isKeyDetected)
-        {
-            uint8_t tx_data[6];
-            tx_data[0] = 0xA1;
-            tx_data[1] = 0xC4;
-            memcpy(tx_data+2,keyStatus,4);
-            Serial.write(tx_data,6);
-        }
-
-        vTaskDelay(100/portTICK_PERIOD_MS);
+void keySend()
+{
+    if(isKeyDetected)
+    {
+        uint8_t tx_data[6];
+        tx_data[0] = 0xA1;
+        tx_data[1] = 0xC4;
+        memcpy(tx_data+2,keyStatus,4);
+        Serial.write(tx_data,6);
     }
 }
 

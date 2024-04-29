@@ -9,10 +9,13 @@
  */
 void Delivery::init()
 {
-    _axis_x.setZero(50000,409600,500,10);
     _axis_x.init();
-    _axis_z.setZero(50000,409600,500,10);
+    // _axis_x.setZero();
+    // _axis_x.init();
+    delay(1000);
     _axis_z.init();
+    // _axis_z.setZero();
+    // _axis_z.init();
 }
 
 /**
@@ -25,10 +28,10 @@ void Delivery::setAbsPoint(float x, float z)
     _x_tar_pos = x;
     _z_tar_pos = z;
 
-    Serial.print("setting abs point:");
-    Serial.print(x);
-    Serial.print(",");
-    Serial.println(z);
+    // Serial.print("setting abs point:");
+    // Serial.print(x);
+    // Serial.print(",");
+    // Serial.println(z);
 }
 
 /**
@@ -41,10 +44,10 @@ void Delivery::setRevPoint(float x, float z)
     _x_tar_pos += x;
     _z_tar_pos += z;
 
-    Serial.print("setting rev point:");
-    Serial.print(x);
-    Serial.print(",");
-    Serial.println(z);
+    // Serial.print("setting rev point:");
+    // Serial.print(x);
+    // Serial.print(",");
+    // Serial.println(z);
 }
 
 /**
@@ -74,7 +77,7 @@ void Delivery::getAbsPoint()
 
     //获取到达状态
     if(_axis_x.getReach() && _axis_z.getReach())
-        if(_reach_time > 5)
+        if(_reach_time > 10)
             _is_reach = true;
         else
             _reach_time++;
@@ -101,23 +104,29 @@ void Delivery::update()
  */
 void Delivery::send()
 {
-    static uint32_t send_time = 0;
     static uint8_t tx_data[10];
+    static bool last_reach;
 
-    if(send_time % 2 == 0)
+    //检测到达标志位的上升沿，只在到达后发送一次消息
+    if(_is_reach && !last_reach)
     {
         tx_data[0] = 0xA1;
         tx_data[1] = 0xC2;
         tx_data[2] = _is_reach;
         Serial.write(tx_data,3);
     }
-    else
-    {
-        tx_data[0] = 0xA1;
-        tx_data[1] = 0xC1;
-        memcpy(tx_data+2,&_x_now_pos,4);
-        memcpy(tx_data+6,&_z_now_pos,4);
-        Serial.write(tx_data,10);
-    }
-    send_time++;
+    // else
+    // {
+    //     tx_data[0] = 0xA1;
+    //     tx_data[1] = 0xC1;
+    //     memcpy(tx_data+2,&_x_now_pos,4);
+    //     memcpy(tx_data+6,&_z_now_pos,4);
+    //     Serial.write(tx_data,10);
+    // }
+    last_reach = _is_reach;
+}
+
+bool Delivery::getReach()
+{
+    return _is_reach;
 }

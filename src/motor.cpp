@@ -4,6 +4,7 @@
 
 #include <Arduino.h>
 #include <motor.h>
+#include <Arduino_FreeRTOS.h>
 
 /**
  * 初始化电机引脚并归零
@@ -13,9 +14,6 @@ void Motor::init()
     pinMode(_cw_pin,OUTPUT);
     pinMode(_ccw_pin,OUTPUT);
     pinMode(_pwm_pin,OUTPUT);
-
-    //电机归零
-    setZero();
 }
 
 /**
@@ -44,7 +42,31 @@ void Motor::setPower(int power)
  */
 void Motor::setTarget(float target)
 {
+    _is_reach = false;
     _target_now = target;
+}
+
+/**
+ * 设置电机回零
+ */
+void Motor::setZeroInit()
+{
+    uint8_t time = 0;
+    //会阻塞，需要手动清零
+    _is_reach = false;
+    while(1)
+    {
+        setPower(-1);
+        delay(10);
+        if(_sw->getKey() == HIGH)
+        {
+            if(time > 5)
+                break;
+            time++;
+        }
+    }
+    clear();
+    _is_reach = true;
 }
 
 /**
@@ -52,9 +74,29 @@ void Motor::setTarget(float target)
  */
 void Motor::setZero()
 {
-    while (_sw->getKey() != HIGH)
-        setPower(-5);
+    uint8_t time = 0;
+    //会阻塞，需要手动清零
+    _is_reach = false;
+    while(1)
+    {
+        setPower(-1);
+        vTaskDelay(10/portTICK_PERIOD_MS);
+        if(_sw->getKey() == HIGH)
+        {
+            if(time > 5)
+                break;
+            time++;
+        }
+    }
     clear();
+    // _is_reach = true;
+
+    // //会阻塞，需要手动清零
+    // _is_reach = false;
+    // while (_sw->getKey() != HIGH)
+    //     setPower(-1);
+    // clear();
+    // _is_reach = true;
 }
 
 /**
@@ -75,7 +117,7 @@ void Motor::update()
     _input_now = (float)_encoder->getCount();
 
     //判断是否归零
-    if(_target_now <= 0)
+    if(_target_now < 0)
         //阻塞式，若电机未归零，任务无法继续
         setZero();
     else
@@ -87,20 +129,26 @@ void Motor::update()
         // print();
 
         //编码器位置不变，说明电机已停止
-        if(abs(_input_now - _input_last) < 0.1f)
+        if(abs(_input_now - _input_last) < 2.0f)
+        {
             //若目标值与实际位置相同，说明电机已到达位置；若不相同，说明电机堵转
-            if((_target_now - _input_now * _y_to_mm) < 1.5f)
+            if((_target_now - _input_now * _y_to_mm) < 3.0f)
+            {
                 //计时到达时间，消抖20*10=200ms
                 if(_reach_time > 20)
                     _is_reach = true;
                 else
                     _reach_time++;
+            }
             else
+            {
                 //计时堵转时间，消抖100*10=1000ms
                 if(_stuck_time > 100)
                     _is_stuck = true;
                 else
                     _stuck_time++;
+            }
+        }
         else
         {
             //清空计时
@@ -112,6 +160,17 @@ void Motor::update()
     }
     //记录上次编码器的脉冲数
     _input_last = _input_now;
+    // if(_is_stuck)
+    // {
+    //     setZero();
+    //     for(;;)
+    //         Serial.println("ERROR: loader stuck");
+    // }
+}
+
+bool Motor::getReach()
+{
+    return _is_reach;
 }
 
 /**
@@ -119,28 +178,31 @@ void Motor::update()
  */
 void Motor::send()
 {
-    // static uint32_t send_time = 0;
-    //
-    // if(send_time % 50 == 0)
-    // {
-        static uint8_t tx_data[3];
+    static uint8_t tx_data[3];
+    static bool last_reach;
+
+    //检测到达标志位的上升沿，只在到达后发送一次消息
+    if (_is_reach && !last_reach)
+    {
         tx_data[0] = 0xA1;
         tx_data[1] = 0xC3;
         tx_data[2] = _is_reach;
         Serial.write(tx_data,3);
-    // }
-    // send_time++;
+    }
+    last_reach = _is_reach;
 }
-
 
 /**
  * 清除电机信息
  */
 void Motor::clear()
 {
+    setPower(0);
     _encoder->clear();
     _pid->clear();
-    setPower(0);
+    _target_now = 0.0f;
+    _input_now = 0.0f;
+    _input_last = 0.0f;
 }
 
 /**
