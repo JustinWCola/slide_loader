@@ -174,6 +174,7 @@ class MainController(object):
             self.loader.set_delivery_abs_point(self.x_end, self.z_end)  # 运送到载物台
             self.loader.give_slide(self.y_push_end, self.z_lift)  # 放入载物台
             # 等待扫描
+            time.sleep(1)
             self.loader.take_slide(self.y_push_end, self.z_lift)  # 从载物台取出
             self.loader.set_delivery_abs_point(self.x_start - self.x_gap * num,
                                                self.z_start - self.z_gap * (i - 1))  # 移到下层
@@ -187,10 +188,11 @@ class MainController(object):
         # 载玻片仓原点309.5 115.8 伸缩长度5-?? 层间距4
         # self.loader.set_loader_point(410.0)
         # self.loader.reset()
-        self.start_loader(0)
-        # self.start_loader(1)
-        # self.start_loader(2)
-        # self.start_loader(3)
+        while True:
+            self.start_loader(0)
+            self.start_loader(1)
+            self.start_loader(2)
+            self.start_loader(3)
         # while True:
         # self.loader.set_delivery_abs_point(309.5, 115.8)
         #     self.loader.take_slide(self.y_push_start, self.z_lift)

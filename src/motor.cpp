@@ -42,18 +42,19 @@ void Motor::setPower(int power)
  */
 void Motor::setTarget(float target)
 {
-    _is_reach = false;
+    _is_reach = false;  //到达标志位只在接收到新指令后清零
     _target_now = target;
 }
 
+
 /**
- * 设置电机回零
+ * 设置电机回零（进入任务前初始化阶段）
  */
 void Motor::setZeroInit()
 {
     uint8_t time = 0;
     //会阻塞，需要手动清零
-    _is_reach = false;
+    _is_reach = false;  //到达标志位只在接收到新指令后清零
     while(1)
     {
         setPower(-1);
@@ -66,17 +67,16 @@ void Motor::setZeroInit()
         }
     }
     clear();
-    _is_reach = true;
 }
 
 /**
- * 设置电机回零
+ * 设置电机回零（进入任务后）
  */
 void Motor::setZero()
 {
     uint8_t time = 0;
     //会阻塞，需要手动清零
-    _is_reach = false;
+    _is_reach = false;  //到达标志位只在接收到新指令后清零
     while(1)
     {
         setPower(-1);
@@ -89,7 +89,6 @@ void Motor::setZero()
         }
     }
     clear();
-    _is_reach = true;
 }
 
 /**
@@ -109,10 +108,12 @@ void Motor::update()
     //得到编码器脉冲数
     _input_now = (float)_encoder->getCount();
 
-    //判断是否归零
+    //判断是否进行归零
     if(_target_now < 0)
+    {
         //阻塞式，若电机未归零，任务无法继续
         setZero();
+    }
     else
     {
         //更新目标值
@@ -120,36 +121,42 @@ void Motor::update()
         //PID核心计算并输出
         setPower((int)_pid->calc(_input_now));
         // print();
+    }
+}
 
-        //编码器位置不变，说明电机已停止
-        if(abs(_input_now - _input_last) < 2.0f)
+/**
+ * 更新电机状态
+ */
+void Motor::updateStatus()
+{
+    //编码器位置不变，说明电机已停止
+    if(abs(_input_now - _input_last) < 2.0f)
+    {
+        //若目标值与实际位置相同，说明电机已到达位置；若不相同，说明电机堵转
+        if((_target_now - _input_now * _y_to_mm) < 5.0f)
         {
-            //若目标值与实际位置相同，说明电机已到达位置；若不相同，说明电机堵转
-            if((_target_now - _input_now * _y_to_mm) < 3.0f)
-            {
-                //计时到达时间，消抖20*10=200ms
-                if(_reach_time > 20)
-                    _is_reach = true;
-                else
-                    _reach_time++;
-            }
+            //计时到达时间，消抖20*10=200ms
+            if(_reach_time > 20)
+                _is_reach = true;
             else
-            {
-                //计时堵转时间，消抖100*10=1000ms
-                if(_stuck_time > 100)
-                    _is_stuck = true;
-                else
-                    _stuck_time++;
-            }
+                _reach_time++;
         }
         else
         {
-            //清空计时
-            _is_reach = false;
-            _is_stuck = false;
-            _reach_time = 0;
-            _stuck_time = 0;
+            //计时堵转时间，消抖100*10=1000ms
+            if(_stuck_time > 100)
+                _is_stuck = true;
+            else
+                _stuck_time++;
         }
+    }
+    else
+    {
+        //清空计时
+        _is_reach = false;
+        _is_stuck = false;
+        _reach_time = 0;
+        _stuck_time = 0;
     }
     //记录上次编码器的脉冲数
     _input_last = _input_now;
@@ -161,6 +168,10 @@ void Motor::update()
     // }
 }
 
+/**
+ * 获取电机到达状态
+ * @return 是否到达
+ */
 bool Motor::getReach()
 {
     return _is_reach;

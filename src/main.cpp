@@ -140,6 +140,7 @@ void taskDelivery(void *param)
     {
         if(motor.getReach())
             delivery.update();
+        delivery.updateStatus();
         vTaskDelay(20/portTICK_PERIOD_MS);
     }
 }
@@ -152,6 +153,7 @@ void taskLoader(void *param)
     {
         if(delivery.getReach())
             motor.update();
+        motor.updateStatus();
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
     }
 }

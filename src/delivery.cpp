@@ -62,7 +62,7 @@ void Delivery::setUnitConvert(float x, float z)
 }
 
 /**
- * 获取传送机构绝对位置以及到达状态
+ * 获取传送机构绝对位置
  */
 void Delivery::getAbsPoint()
 {
@@ -74,18 +74,6 @@ void Delivery::getAbsPoint()
 //    Serial.print(_pos_x);
 //    Serial.print(",");
 //    Serial.println(_pos_z);
-
-    //获取到达状态
-    if(_axis_x.getReach() && _axis_z.getReach())
-        if(_reach_time > 10)
-            _is_reach = true;
-        else
-            _reach_time++;
-    else
-    {
-        _is_reach = false;
-        _reach_time = 0;
-    }
 }
 
 /**
@@ -96,7 +84,36 @@ void Delivery::update()
     _axis_x.setAbsPosition((int32_t)(LIMIT(_x_tar_pos, 310, 0) / _x_to_mm));
     _axis_z.setAbsPosition((int32_t)(LIMIT(_z_tar_pos, 136, 0) / _z_to_mm));
 
-    getAbsPoint();
+    // getAbsPoint();
+}
+
+/**
+ * 更新传送机构状态
+ */
+void Delivery::updateStatus()
+{
+    //获取到达状态
+    if(_axis_x.getReach() && _axis_z.getReach())
+        //计时到达时间，消抖10*20=200ms
+        if(_reach_time > 10)
+            _is_reach = true;
+        else
+            _reach_time++;
+    else
+    {
+        //清空计时
+        _is_reach = false;  //只在这一个地方清零
+        _reach_time = 0;
+    }
+}
+
+/**
+ * 获取传送机构到达状态
+ * @return 是否达到
+ */
+bool Delivery::getReach()
+{
+    return _is_reach;
 }
 
 /**
@@ -124,9 +141,4 @@ void Delivery::send()
     //     Serial.write(tx_data,10);
     // }
     last_reach = _is_reach;
-}
-
-bool Delivery::getReach()
-{
-    return _is_reach;
 }

@@ -31,13 +31,12 @@ public:
     void setAbsPoint(float x, float z);
     void setRevPoint(float x, float z);
     void setUnitConvert(float x, float z);
+    void getAbsPoint();
 
     void update();
-    void send();
+    void updateStatus();
     bool getReach();
-
-private:
-    void getAbsPoint();
+    void send();
 
 private:
     CANopen _can;
