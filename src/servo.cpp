@@ -11,12 +11,12 @@ void Servo::init()
 {
     _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
 
-    disableMotor();
+    disableMotor();//切换模式之前要先失能电机
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
     setMotionMode(eMotionMode::PP);//设置为轮廓位置模式
-    setMotorReady();
-    disableMotor();
-    enableMotor();
+    setMotorReady();//电机准备
+    disableMotor();//电机失能
+    enableMotor();//电机使能
 }
 
 /**
@@ -89,39 +89,41 @@ void Servo::enableMotor()
 
 /**
  * 设置电机回零
- * @param vel 回零速度
- * @param acc 回零加速度
- * @param trq 堵转转矩
- * @param time 堵转时间
  * @return 回零完成
  */
-bool Servo::setZero(uint32_t vel, uint32_t acc, uint16_t trq, uint16_t time)
+bool Servo::setZero()
 {
     _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
 
-    disableMotor();
+    disableMotor();//切换模式之前要先失能电机
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
-    setMotionMode(eMotionMode::HM);
+    setMotionMode(eMotionMode::HM);//设置为原点回归模式
 
-    _can.write(_id, I_ZERO_MODE, 0, (uint8_t)eZeroMode::NegativeStuck);
-    _can.write(_id, I_ZERO_VELOCITY, SI_LOW_VELOCITY, (uint32_t)vel);
-    _can.write(_id, I_ZERO_ACCELERATION, 0, (uint32_t)acc);
+    // 这些参数需要设置之后给伺服电机下电才会生效，因此不能在这里设置
+    // _can.write(_id, I_POSITION_CONTROL, SI_ZERO_TIME_LIMIT, (uint16_t)50000);
+    // _can.write(_id, I_ZERO_MODE, 0, (uint8_t)eZeroMode::NegativeStuck);
+    // _can.write(_id, I_ZERO_VELOCITY, SI_LOW_VELOCITY, (uint32_t)50000);
+    // _can.write(_id, I_ZERO_ACCELERATION, 0, (uint32_t)409600);
+    //
+    // _can.write(_id, I_STUCK_CHECK, SI_STUCK_TORQUE, (uint16_t)500);
+    // _can.write(_id, I_STUCK_CHECK, SI_STUCK_TIME, (uint16_t)10);
 
-    _can.write(_id, I_STUCK_CHECK, SI_STUCK_TORQUE, (uint16_t)trq);
-    _can.write(_id, I_STUCK_CHECK, SI_STUCK_TIME, (uint16_t)time);
+    setMotorReady();//电机准备
+    disableMotor();//电机失能
+    enableMotor();//电机使能
 
-    setMotorReady();
-    disableMotor();
-    enableMotor();
-
+    //触发电机运行
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
 
-    uint16_t status;
+    //检测回零是否完成，电机状态字的第12位会在回零完成后置1
+    volatile uint32_t status = 0;
     while((status&(1<<12))>>12 == 0)
     {
-        _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
         delay(100);
+        Serial.print("setting zero, ID:");
+        Serial.println(_id);
+        _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
     }
 
     return true;
@@ -222,6 +224,7 @@ int32_t Servo::getAbsPosition()
  */
 bool Servo::getReach()
 {
+    //电机状态字的第10位会在位置到达后置1
     uint16_t status;
     _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
     return (status&(1<<10))>>10;

@@ -62,15 +62,18 @@ typedef enum eZeroMode : uint8_t
 };
 
 #define I_ZERO_VELOCITY     0x6099  //回零速度
-#define I_ZERO_ACCELERATION 0x609A  //回零加速度
-
 #define SI_HIGH_VELOCITY    0X01    //查找开关（高速）速度
 #define SI_LOW_VELOCITY     0X02    //查找零点（低速）速度
 
-#define I_STUCK_CHECK   0x2007  //堵转检测
+#define I_ZERO_ACCELERATION 0x609A  //回零加速度
 
+#define I_STUCK_CHECK   0x2007  //堵转检测
 #define SI_STUCK_TORQUE 0X13    //堵转转矩检测
 #define SI_STUCK_TIME   0X15    //堵转时间检测
+
+#define I_POSITION_CONTROL  0X2005  //位置控制参数
+#define SI_ZERO_TIME_LIMIT  0X1C    //回零时间限制
+
 
 class Servo
 {
@@ -84,7 +87,7 @@ public:
     void disableMotor();
     void enableMotor();
 
-    bool setZero(uint32_t vel, uint32_t acc, uint16_t trq, uint16_t time);
+    bool setZero();
     bool setAbsPosition(int32_t pos, uint32_t vel);
     bool setAbsPosition(int32_t pos);
     bool setRevPosition(int32_t pos, uint32_t vel);

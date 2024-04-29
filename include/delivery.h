@@ -34,6 +34,7 @@ public:
 
     void update();
     void send();
+    bool getReach();
 
 private:
     void getAbsPoint();
