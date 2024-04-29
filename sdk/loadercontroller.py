@@ -1,3 +1,4 @@
+import datetime
 import time
 import serial
 import struct
@@ -42,9 +43,9 @@ class LoaderController(object):
         self.delivery_reach = False
         while not self.delivery_reach:
             time.sleep(0.1)
-            print("waiting for delivery point")
+            # print("waiting for delivery point")
         self.delivery_reach = False
-        print("delivery point reached")
+        # print("delivery point reached")
 
     def set_delivery_rev_point(self, x, z):
         self.x_tar_pos += x
@@ -53,9 +54,9 @@ class LoaderController(object):
         self.delivery_reach = False
         while not self.delivery_reach:
             time.sleep(0.1)
-            print("waiting for delivery point")
+            # print("waiting for delivery point")
         self.delivery_reach = False
-        print("delivery point reached")
+        # print("delivery point reached")
 
     def set_delivery_abs_x(self, x):
         self.set_delivery_abs_point(x, self.z_tar_pos)
@@ -74,9 +75,9 @@ class LoaderController(object):
         self.loader_reach = False
         while not self.loader_reach:
             time.sleep(0.1)
-            print("waiting for loader point")
+            # print("waiting for loader point")
         self.loader_reach = False
-        print("loader point reached")
+        # print("loader point reached")
 
     def set_led_color(self, led):
         self.serial.write(b"\xA1" + b"\xB4" + led[0] + led[1] + led[2] + led[3])
@@ -186,13 +187,14 @@ class MainController(object):
 
     def select_loader(self):
         # 载玻片仓原点309.5 115.8 伸缩长度5-?? 层间距4
-        # self.loader.set_loader_point(410.0)
+        # self.loader.set_delivery_abs_point(309.5, 115.8)
+        # self.loader.set_loader_point(0.0)
         # self.loader.reset()
         while True:
             self.start_loader(0)
-            self.start_loader(1)
-            self.start_loader(2)
-            self.start_loader(3)
+        #     self.start_loader(1)
+        #     self.start_loader(2)
+        #     self.start_loader(3)
         # while True:
         # self.loader.set_delivery_abs_point(309.5, 115.8)
         #     self.loader.take_slide(self.y_push_start, self.z_lift)

@@ -41,7 +41,6 @@ private:
     Key *_sw;           //限位开关指针
 
     bool _is_reach = false;
-    bool _is_push = false;
     bool _is_stuck = false;
     uint8_t _reach_time = 0;
     uint8_t _stuck_time = 0;

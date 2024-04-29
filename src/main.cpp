@@ -122,6 +122,7 @@ void taskSerial(void *param)
                 }
             }
         }
+        Serial.flush();
 
         if(send_time % 2 == 0)
             delivery.send();

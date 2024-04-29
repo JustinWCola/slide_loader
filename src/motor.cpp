@@ -133,7 +133,7 @@ void Motor::updateStatus()
     if(abs(_input_now - _input_last) < 2.0f)
     {
         //若目标值与实际位置相同，说明电机已到达位置；若不相同，说明电机堵转
-        if((_target_now - _input_now * _y_to_mm) < 5.0f)
+        if(_target_now - _input_now * _y_to_mm < 5.0f)
         {
             //计时到达时间，消抖20*10=200ms
             if(_reach_time > 20)
