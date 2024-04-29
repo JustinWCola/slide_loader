@@ -150,7 +150,8 @@ void taskLoader(void *param)
     xLastWakeTime = xTaskGetTickCount();
     while(1)
     {
-        motor.update();
+        if(delivery.getReach())
+            motor.update();
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
     }
 }

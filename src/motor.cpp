@@ -89,14 +89,7 @@ void Motor::setZero()
         }
     }
     clear();
-    // _is_reach = true;
-
-    // //会阻塞，需要手动清零
-    // _is_reach = false;
-    // while (_sw->getKey() != HIGH)
-    //     setPower(-1);
-    // clear();
-    // _is_reach = true;
+    _is_reach = true;
 }
 
 /**

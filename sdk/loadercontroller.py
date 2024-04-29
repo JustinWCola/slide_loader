@@ -19,11 +19,11 @@ class Key(object):
 
 class LoaderController(object):
     def __init__(self, port):
-        self.x_now_pos = 0
-        self.z_now_pos = 0
+        self.x_now_pos = 0.0
+        self.z_now_pos = 0.0
 
-        self.x_tar_pos = 0
-        self.z_tar_pos = 0
+        self.x_tar_pos = 0.0
+        self.z_tar_pos = 0.0
 
         self.delivery_reach = False
         self.loader_reach = False
@@ -133,15 +133,15 @@ class LoaderController(object):
     def take_slide(self, y_push, z_lift):
         self.set_loader_point(y_push)  # 执行机构伸出
         self.set_delivery_rev_point(0, -z_lift)  # 向上
-        self.set_loader_point(10.0)  # 执行机构收回
+        self.set_loader_point(-1.0)  # 执行机构收回
 
     def give_slide(self, y_push, z_lift):
         self.set_loader_point(y_push)  # 执行机构伸出
         self.set_delivery_rev_point(0, z_lift)  # 向下
-        self.set_loader_point(10.0)  # 执行机构收回
+        self.set_loader_point(-1.0)  # 执行机构收回
 
     def reset(self):
-        self.set_loader_point(0.0)
+        self.set_loader_point(-1.0)
         self.set_delivery_abs_point(200.0, 50.0)
         self.loader_reach = False
         self.delivery_reach = False
@@ -154,15 +154,15 @@ class MainController(object):
         self.x_start = 309.5  # 载玻片仓X原点
         self.z_start = 115.8  # 载玻片仓Z原点
 
-        self.x_gap = 75  # 载玻片仓X间隔
-        self.z_gap = 4  # 载玻片仓Z间隔
+        self.x_gap = 75.0  # 载玻片仓X间隔
+        self.z_gap = 4.0  # 载玻片仓Z间隔
 
-        self.x_end = 6  # 载物台X位置
+        self.x_end = 6.0  # 载物台X位置
         self.z_end = 108.85  # 载物台Z位置
 
-        self.y_push_start = 300  # 载玻片仓推杆行程
-        self.y_push_end = 300  # 显微镜推杆行程
-        self.z_lift = 4  # 抬升行程
+        self.y_push_start = 410.0  # 载玻片仓推杆行程
+        self.y_push_end = 410.0  # 显微镜推杆行程
+        self.z_lift = 4.0  # 抬升行程
 
     def start_loader(self, num):
         # self.loader.led[id] = Color.yellow  # 开始装载，亮黄灯
@@ -185,9 +185,9 @@ class MainController(object):
 
     def select_loader(self):
         # 载玻片仓原点309.5 115.8 伸缩长度5-?? 层间距4
-        self.loader.set_loader_point(350.0)
+        # self.loader.set_loader_point(410.0)
         # self.loader.reset()
-        # self.start_loader(0)
+        self.start_loader(0)
         # self.start_loader(1)
         # self.start_loader(2)
         # self.start_loader(3)
