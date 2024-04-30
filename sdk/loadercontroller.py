@@ -1,4 +1,4 @@
-import datetime
+import crcmod
 import time
 import serial
 import struct
@@ -30,16 +30,22 @@ class LoaderController(object):
         self.loader_reach = False
 
         self.serial = serial.Serial(port, 115200, timeout=0.01)
+        self.crc8 = crcmod.predefined.Crc("crc-8")
 
         self.queue = queue.PriorityQueue()
         self.key = [Key.none, Key.none, Key.none, Key.none]
         self.led = [Color.red, Color.red, Color.red, Color.red]
-        self.set_led_color(self.led)
+        # self.set_led_color(self.led)
+
+    def crc8_check_send(self, tx_data):
+        self.crc8.update(bytes(tx_data))
+        self.serial.write(bytes(tx_data) + self.crc8.crcValue.to_bytes() + b"\xFF")
 
     def set_delivery_abs_point(self, x, z):
         self.x_tar_pos = x
         self.z_tar_pos = z
-        self.serial.write(b"\xA1" + b"\xB1" + struct.pack("<ff", x, z))
+        tx_data = b"\xAA" + b"\xB1" + struct.pack("<ff", x, z)
+        self.crc8_check_send(tx_data)
         self.delivery_reach = False
         while not self.delivery_reach:
             time.sleep(0.1)
@@ -50,7 +56,8 @@ class LoaderController(object):
     def set_delivery_rev_point(self, x, z):
         self.x_tar_pos += x
         self.z_tar_pos += z
-        self.serial.write(b"\xA1" + b"\xB2" + struct.pack("<ff", x, z))
+        tx_data = b"\xAA" + b"\xB2" + struct.pack("<ff", x, z)
+        self.crc8_check_send(tx_data)
         self.delivery_reach = False
         while not self.delivery_reach:
             time.sleep(0.1)
@@ -71,7 +78,8 @@ class LoaderController(object):
         self.set_delivery_rev_point(0, z)
 
     def set_loader_point(self, y):
-        self.serial.write(b"\xA1" + b"\xB3" + struct.pack("<f", y))
+        tx_data = b"\xAA" + b"\xB3" + struct.pack("<ff", y, 0)
+        self.crc8_check_send(tx_data)
         self.loader_reach = False
         while not self.loader_reach:
             time.sleep(0.1)
@@ -80,10 +88,16 @@ class LoaderController(object):
         # print("loader point reached")
 
     def set_led_color(self, led):
-        self.serial.write(b"\xA1" + b"\xB4" + led[0] + led[1] + led[2] + led[3])
+        tx_data = b"\x5A" + b"\xB4" + led[0] + led[1] + led[2] + led[3] + b"\x00" + b"\x00" + b"\x00" + b"\x00"
+        self.crc8_check_send(tx_data)
 
-    def set_unit_convert(self, x, y, z):
-        self.serial.write(b"\xA1" + b"\xB5" + struct.pack("<fff", x, y, z))
+    def set_delivery_unit_convert(self, x, z):
+        tx_data = b"\xAA" + b"\xB5" + struct.pack("<ff", x, z)
+        self.crc8_check_send(tx_data)
+
+    def set_loader_unit_convert(self, y):
+        tx_data = b"\xAA" + b"\xB6" + struct.pack("<ff", y, 0)
+        self.crc8_check_send(tx_data)
 
     def read_msg(self):
         # byte 0 start 0xA1
@@ -107,29 +121,33 @@ class LoaderController(object):
         while True:
             # print(self.delivery_reach,self.loader_reach)
             # print(self.serial.readline().decode("utf-8"))
-            if self.serial.read() == b"\xA1":
-                cmd_id = self.serial.read()
-                if cmd_id == b"\xC1":
-                    self.x_now_pos = struct.unpack("<f", self.serial.read(4))
-                    self.z_now_pos = struct.unpack("<f", self.serial.read(4))
-                elif cmd_id == b"\xC2":
-                    if self.serial.read() == b"\x01":
-                        self.delivery_reach = True
-                elif cmd_id == b"\xC3":
-                    if self.serial.read() == b"\x01":
-                        self.loader_reach = True
-                elif cmd_id == b"\xC4":
-                    self.key = struct.unpack("<cccc", self.serial.read(4))
-                    for i in range(0, 4):
-                        if self.key[i] == Key.pressed:
-                            if i == 0:
-                                self.queue.put((1, 0))
-                            else:
-                                self.queue.put((2, i))
-                            self.led[i] = Color.red
-                        elif self.key[i] == Key.released:
-                            self.led[i] = Color.red
-                    self.set_led_color(self.led)
+            if self.serial.read() == b"\xAA":
+                rx_data = self.serial.read(4)
+                self.crc8.update(rx_data)
+                if self.crc8.crcValue == rx_data[2] and rx_data[3] == b"\xFF":
+                    cmd_id = rx_data[0]
+                    if cmd_id == b"\xC1":
+                        self.x_now_pos = struct.unpack("<f", self.serial.read(4))
+                        self.z_now_pos = struct.unpack("<f", self.serial.read(4))
+                    elif cmd_id == b"\xC2":
+                        if self.serial.read() == b"\x01":
+                            self.delivery_reach = True
+                    elif cmd_id == b"\xC3":
+                        if self.serial.read() == b"\x01":
+                            self.loader_reach = True
+                    elif cmd_id == b"\xC4":
+                        self.key = struct.unpack("<cccc", self.serial.read(4))
+                        for i in range(0, 4):
+                            if self.key[i] == Key.pressed:
+                                if i == 0:
+                                    self.queue.put((1, 0))
+                                else:
+                                    self.queue.put((2, i))
+                                self.led[i] = Color.red
+                            elif self.key[i] == Key.released:
+                                self.led[i] = Color.red
+                        self.set_led_color(self.led)
+            self.serial.flush()
 
     def take_slide(self, y_push, z_lift):
         self.set_loader_point(y_push)  # 执行机构伸出
@@ -188,10 +206,11 @@ class MainController(object):
     def select_loader(self):
         # 载玻片仓原点309.5 115.8 伸缩长度5-?? 层间距4
         # self.loader.set_delivery_abs_point(309.5, 115.8)
-        # self.loader.set_loader_point(0.0)
+        self.loader.set_loader_point(100.0)
+        # self.loader.set_led_color(self.loader.led)
         # self.loader.reset()
-        while True:
-            self.start_loader(0)
+        # while True:
+        #     self.start_loader(0)
         #     self.start_loader(1)
         #     self.start_loader(2)
         #     self.start_loader(3)

@@ -3,6 +3,7 @@
 //
 
 #include <delivery.h>
+#include <crc8.h>
 
 /**
  * 初始化传送机构
@@ -121,16 +122,18 @@ bool Delivery::getReach()
  */
 void Delivery::send()
 {
-    static uint8_t tx_data[10];
+    uint8_t tx_data[10] = {0};
     static bool last_reach;
 
     //检测到达标志位的上升沿，只在到达后发送一次消息
     if(_is_reach && !last_reach)
     {
-        tx_data[0] = 0xA1;
+        tx_data[0] = 0xAA;
         tx_data[1] = 0xC2;
         tx_data[2] = _is_reach;
-        Serial.write(tx_data,3);
+        tx_data[3] = crc8Check(tx_data,3);
+        tx_data[4] = 0xFF;
+        Serial.write(tx_data,5);
     }
     // else
     // {

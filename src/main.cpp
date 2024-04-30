@@ -5,6 +5,7 @@
 #include <delivery.h>
 #include <led.h>
 #include <key.h>
+#include <crc8.h>
 #include <Arduino_FreeRTOS.h>
 
 CANopen CANOPEN;
@@ -57,12 +58,12 @@ void setup()
     // motor.setPower(0);
     delay(3000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    CANOPEN.begin(CanBitRate::BR_1000k);
-    //初始化伺服电机
-    delivery.init();
+    // CANOPEN.begin(CanBitRate::BR_1000k);
+    // //初始化伺服电机
+    // delivery.init();
 
     xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    // xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
     xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
@@ -73,61 +74,58 @@ void taskSerial(void *param)
 {
     while(1)
     {
-        //协议见README
         static uint32_t send_time = 0;
-        uint8_t rx_data[8] = {0};
-        float x,y,z;
+        uint8_t rx_data[12] = {0};
+        float x = 0, y = 0, z = 0;
+        //协议见README
         if(Serial.available() > 0)
         {
-            if(Serial.read() == 0xA1)
+            // 1帧头 + 1命令符 + 8数据 + 1校验 + 1帧尾
+            if(Serial.read() == 0xAA)
             {
-                switch (Serial.read())
+                rx_data[0] = 0xAA;
+                Serial.readBytes(rx_data + 1,22);
+                if(rx_data[10] == crc8Check(rx_data,10) && rx_data[11] == 0xFF)
                 {
-                    case 0xB1:
-                        Serial.readBytes(rx_data, 8);
-                        memcpy(&x, rx_data, 4);
-                        memcpy(&z, rx_data + 4, 4);
-
-                        delivery.setAbsPoint(x, z);
+                    switch (rx_data[1])
+                    {
+                        case 0xB1:
+                            memcpy(&x, rx_data + 2, 4);
+                            memcpy(&z, rx_data + 6, 4);
+                            delivery.setAbsPoint(x, z);
                         break;
-                    case 0xB2:
-                        Serial.readBytes(rx_data, 8);
-                        memcpy(&x, rx_data, 4);
-                        memcpy(&z, rx_data + 4, 4);
-
-                        delivery.setRevPoint(x, z);
+                        case 0xB2:
+                            memcpy(&x, rx_data + 2, 4);
+                            memcpy(&z, rx_data + 6, 4);
+                            delivery.setRevPoint(x, z);
                         break;
-                    case 0xB3:
-                        Serial.readBytes(rx_data,8);
-                        memcpy(&y, rx_data, 4);
-
-                        motor.setTarget(y);
+                        case 0xB3:
+                            memcpy(&y, rx_data + 2, 4);
+                            motor.setTarget(y);
                         break;
-                    case 0xB4:
-                        Serial.readBytes(rx_data,4);
-
-                        for (int i = 0; i < 4; i++)
-                            if (rx_data[i] != 0)
-                                led[i].setColor((eLedColor)rx_data[i]);
+                        case 0xB4:
+                            for (int i = 2; i < 6; i++)
+                                if (rx_data[i] != 0)
+                                    led[i].setColor((eLedColor)rx_data[i]);
                         break;
-                    case 0xB5:
-                        Serial.readBytes(rx_data,12);
-                        memcpy(&x,rx_data, 4);
-                        memcpy(&y,rx_data + 4, 4);
-                        memcpy(&z,rx_data + 8, 4);
-                        
-                        delivery.setUnitConvert(x,z);
+                        case 0xB5:
+                            memcpy(&x,rx_data + 2, 4);
+                            memcpy(&y,rx_data + 6, 4);
+                            delivery.setUnitConvert(x,z);
                         motor.setUnitConvert(y);
                         break;
+                        case 0xB6:
+                            memcpy(&x,rx_data + 2, 4);
+                            motor.setUnitConvert(y);
+                        break;
+                    }
                 }
             }
         }
         Serial.flush();
 
-        if(send_time % 2 == 0)
-            delivery.send();
-        else if (send_time % 2 == 1)
-            motor.send();
+        delivery.send();
+        motor.send();
         // else if (send_time % 3 == 2)
         //     keySend();
         send_time++;
@@ -152,7 +150,7 @@ void taskLoader(void *param)
     xLastWakeTime = xTaskGetTickCount();
     while(1)
     {
-        if(delivery.getReach())
+        // if(delivery.getReach())
             motor.update();
         motor.updateStatus();
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
