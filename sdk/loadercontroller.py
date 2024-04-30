@@ -23,9 +23,10 @@ class LoaderController(object):
         self.x_now_pos = 0.0
         self.z_now_pos = 0.0
 
-        self.x_tar_pos = 0.0
-        self.z_tar_pos = 0.0
+        self.x_target = 0.0
+        self.z_target = 0.0
 
+        self.is_busy = True;
         self.delivery_reach = False
         self.loader_reach = False
 
@@ -42,61 +43,73 @@ class LoaderController(object):
         self.serial.write(bytes(tx_data) + self.crc8.crcValue.to_bytes() + b"\xFF")
 
     def set_delivery_abs_point(self, x, z):
-        self.x_tar_pos = x
-        self.z_tar_pos = z
-        tx_data = b"\xAA" + b"\xB1" + struct.pack("<ff", x, z)
-        self.crc8_check_send(tx_data)
-        self.delivery_reach = False
-        while not self.delivery_reach:
-            time.sleep(0.1)
-            # print("waiting for delivery point")
-        self.delivery_reach = False
-        # print("delivery point reached")
+        self.set_delivery_abs_x(x);
+        self.set_delivery_abs_z(z);
 
     def set_delivery_rev_point(self, x, z):
-        self.x_tar_pos += x
-        self.z_tar_pos += z
-        tx_data = b"\xAA" + b"\xB2" + struct.pack("<ff", x, z)
+        self.set_delivery_rev_x(x)
+        self.set_delivery_rev_z(z)
+
+    def update_delivery_x(self):
+        tx_data = b"\xAA" + b"\xB1" + struct.pack("<f", self.x_target)
         self.crc8_check_send(tx_data)
-        self.delivery_reach = False
-        while not self.delivery_reach:
+        self.is_busy = False
+        while self.is_busy:
             time.sleep(0.1)
-            # print("waiting for delivery point")
-        self.delivery_reach = False
-        # print("delivery point reached")
+            print("waiting for x")
+        self.is_busy = False
+        print("x reached")
+
+    def update_delivery_z(self):
+        tx_data = b"\xAA" + b"\xB2" + struct.pack("<f", self.z_target)
+        self.crc8_check_send(tx_data)
+        self.is_busy = False
+        while self.is_busy:
+            time.sleep(0.1)
+            print("waiting z")
+        self.is_busy = False
+        print("z reached")
 
     def set_delivery_abs_x(self, x):
-        self.set_delivery_abs_point(x, self.z_tar_pos)
+        self.x_target = x
+        self.update_delivery_x()
 
     def set_delivery_abs_z(self, z):
-        self.set_delivery_abs_point(self.x_tar_pos, z)
+        self.z_target = z
+        self.update_delivery_z()
 
     def set_delivery_rev_x(self, x):
-        self.set_delivery_rev_point(x, 0)
+        self.x_target += x
+        self.update_delivery_x()
 
     def set_delivery_rev_z(self, z):
-        self.set_delivery_rev_point(0, z)
+        self.z_target += z
+        self.update_delivery_z()
 
     def set_loader_point(self, y):
         tx_data = b"\xAA" + b"\xB3" + struct.pack("<ff", y, 0)
         self.crc8_check_send(tx_data)
-        self.loader_reach = False
-        while not self.loader_reach:
+        self.is_busy = False
+        while self.is_busy:
             time.sleep(0.1)
             # print("waiting for loader point")
-        self.loader_reach = False
+        self.is_busy = False
         # print("loader point reached")
 
     def set_led_color(self, led):
         tx_data = b"\x5A" + b"\xB4" + led[0] + led[1] + led[2] + led[3] + b"\x00" + b"\x00" + b"\x00" + b"\x00"
         self.crc8_check_send(tx_data)
 
-    def set_delivery_unit_convert(self, x, z):
-        tx_data = b"\xAA" + b"\xB5" + struct.pack("<ff", x, z)
+    def set_delivery_unit_convert_x(self, x):
+        tx_data = b"\xAA" + b"\xD1" + struct.pack("<f", x)
+        self.crc8_check_send(tx_data)
+
+    def set_delivery_unit_convert_z(self, z):
+        tx_data = b"\xAA" + b"\xD2" + struct.pack("<f", z)
         self.crc8_check_send(tx_data)
 
     def set_loader_unit_convert(self, y):
-        tx_data = b"\xAA" + b"\xB6" + struct.pack("<ff", y, 0)
+        tx_data = b"\xAA" + b"\xD3" + struct.pack("<f", y)
         self.crc8_check_send(tx_data)
 
     def read_msg(self):
@@ -119,44 +132,49 @@ class LoaderController(object):
         # byte 4 key2
         # byte 5 key3
         while True:
-            # print(self.delivery_reach,self.loader_reach)
-            # print(self.serial.readline().decode("utf-8"))
-            if self.serial.read() == b"\xAA":
-                rx_data = self.serial.read(4)
-                self.crc8.update(rx_data)
-                if self.crc8.crcValue == rx_data[2] and rx_data[3] == b"\xFF":
-                    cmd_id = rx_data[0]
-                    if cmd_id == b"\xC1":
-                        self.x_now_pos = struct.unpack("<f", self.serial.read(4))
-                        self.z_now_pos = struct.unpack("<f", self.serial.read(4))
-                    elif cmd_id == b"\xC2":
-                        if self.serial.read() == b"\x01":
-                            self.delivery_reach = True
-                    elif cmd_id == b"\xC3":
-                        if self.serial.read() == b"\x01":
-                            self.loader_reach = True
-                    elif cmd_id == b"\xC4":
-                        self.key = struct.unpack("<cccc", self.serial.read(4))
-                        for i in range(0, 4):
-                            if self.key[i] == Key.pressed:
-                                if i == 0:
-                                    self.queue.put((1, 0))
-                                else:
-                                    self.queue.put((2, i))
-                                self.led[i] = Color.red
-                            elif self.key[i] == Key.released:
-                                self.led[i] = Color.red
-                        self.set_led_color(self.led)
+            # print(self.is_busy)
+            print(self.serial.readline().decode("utf-8"))
+            # if self.serial.read() == b"\xAA":
+            #     rx_data = self.serial.read(4)
+            #     self.crc8.update(b"\xAA" + rx_data)
+            #     if self.crc8.crcValue == rx_data[3] and rx_data[4] == b"\xFF":
+            #         cmd_id = rx_data[1]
+            #         if cmd_id == b"\xC1":
+            #             if rx_data[2] == b"\x01":
+            #                 self.is_busy = True
+
+
+                    # if cmd_id == b"\xC1":
+                    #     self.x_now_pos = struct.unpack("<f", self.serial.read(4))
+                    #     self.z_now_pos = struct.unpack("<f", self.serial.read(4))
+                    # elif cmd_id == b"\xC2":
+                    #     if self.serial.read() == b"\x01":
+                    #         self.delivery_reach = True
+                    # elif cmd_id == b"\xC3":
+                    #     if self.serial.read() == b"\x01":
+                    #         self.loader_reach = True
+                    # elif cmd_id == b"\xC4":
+                    #     self.key = struct.unpack("<cccc", self.serial.read(4))
+                    #     for i in range(0, 4):
+                    #         if self.key[i] == Key.pressed:
+                    #             if i == 0:
+                    #                 self.queue.put((1, 0))
+                    #             else:
+                    #                 self.queue.put((2, i))
+                    #             self.led[i] = Color.red
+                    #         elif self.key[i] == Key.released:
+                    #             self.led[i] = Color.red
+                    #     self.set_led_color(self.led)
             self.serial.flush()
 
     def take_slide(self, y_push, z_lift):
         self.set_loader_point(y_push)  # 执行机构伸出
-        self.set_delivery_rev_point(0, -z_lift)  # 向上
+        self.set_delivery_rev_z(-z_lift)  # 向上
         self.set_loader_point(-1.0)  # 执行机构收回
 
     def give_slide(self, y_push, z_lift):
         self.set_loader_point(y_push)  # 执行机构伸出
-        self.set_delivery_rev_point(0, z_lift)  # 向下
+        self.set_delivery_rev_z(z_lift)  # 向下
         self.set_loader_point(-1.0)  # 执行机构收回
 
     def reset(self):
@@ -205,8 +223,9 @@ class MainController(object):
 
     def select_loader(self):
         # 载玻片仓原点309.5 115.8 伸缩长度5-?? 层间距4
-        # self.loader.set_delivery_abs_point(309.5, 115.8)
-        self.loader.set_loader_point(100.0)
+        self.loader.set_delivery_abs_x(100.0)
+        # self.loader.set_delivery_abs_z(0.0)
+        # self.loader.set_loader_point(0.0)
         # self.loader.set_led_color(self.loader.led)
         # self.loader.reset()
         # while True:

@@ -78,9 +78,19 @@ typedef enum eZeroMode : uint8_t
 class Servo
 {
 public:
-    Servo(CANopen& can, uint8_t id):_can(can),_id(id){}
+    Servo(CANopen& can, uint8_t id, float guide):_can(can),_id(id),_guide(guide){}
 
     void init();
+
+    void setAbsPos(float pos);
+    void setRevPos(float pos);
+    void setUnitConvert(float point);
+    void update();
+    void updateStatus();
+    bool getReach();
+    void send();
+
+private:
     bool setCtrlMode(eCtrlMode ctrl_mode);
     bool setMotionMode(eMotionMode motion_mode);
     void setMotorReady();
@@ -92,13 +102,22 @@ public:
     bool setAbsPosition(int32_t pos);
     bool setRevPosition(int32_t pos, uint32_t vel);
     bool setRevPosition(int32_t pos);
-
     int32_t getAbsPosition();
-    bool getReach();
 
 private:
     uint8_t _id;
     CANopen _can;
+
+    float _target_now = 0;
+    float _input_now = 0;
+    float _input_last = 0;
+
+    float _guide;
+    float _pulse = 10000.0f;
+    float _pulse_to_mm = (_guide/_pulse);//编码器位置 -> 实际位置(mm)
+
+    bool _is_reach = false;
+    uint8_t _reach_time = 0;
 };
 
 #endif //SERVO_H

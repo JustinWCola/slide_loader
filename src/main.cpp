@@ -2,14 +2,15 @@
 #include <encoder.h>
 #include <motor.h>
 #include <canopen.h>
-#include <delivery.h>
+#include <servo.h>
 #include <led.h>
 #include <key.h>
 #include <crc8.h>
 #include <Arduino_FreeRTOS.h>
 
 CANopen CANOPEN;
-Delivery delivery(CANOPEN);
+Servo axis_x(CANOPEN,1,5);
+Servo axis_z(CANOPEN,2,2);
 
 Encoder motor_encoder(2,3);
 Pid motor_pid(1,0,0.1);
@@ -58,12 +59,13 @@ void setup()
     // motor.setPower(0);
     delay(3000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    // CANOPEN.begin(CanBitRate::BR_1000k);
-    // //初始化伺服电机
-    // delivery.init();
+    CANOPEN.begin(CanBitRate::BR_1000k);
+    //初始化伺服电机
+    axis_x.init();
+    axis_z.init();
 
     xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    // xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
     xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
@@ -80,24 +82,22 @@ void taskSerial(void *param)
         //协议见README
         if(Serial.available() > 0)
         {
-            // 1帧头 + 1命令符 + 8数据 + 1校验 + 1帧尾
+            // 1帧头 + 1命令符 + 4数据 + 1校验 + 1帧尾
             if(Serial.read() == 0xAA)
             {
                 rx_data[0] = 0xAA;
                 Serial.readBytes(rx_data + 1,22);
-                if(rx_data[10] == crc8Check(rx_data,10) && rx_data[11] == 0xFF)
+                if(rx_data[6] == crc8Check(rx_data,6) && rx_data[7] == 0xFF)
                 {
                     switch (rx_data[1])
                     {
                         case 0xB1:
                             memcpy(&x, rx_data + 2, 4);
-                            memcpy(&z, rx_data + 6, 4);
-                            delivery.setAbsPoint(x, z);
+                            axis_x.setAbsPos(x);
                         break;
                         case 0xB2:
-                            memcpy(&x, rx_data + 2, 4);
-                            memcpy(&z, rx_data + 6, 4);
-                            delivery.setRevPoint(x, z);
+                            memcpy(&z, rx_data + 2, 4);
+                            axis_z.setAbsPos(z);
                         break;
                         case 0xB3:
                             memcpy(&y, rx_data + 2, 4);
@@ -108,13 +108,14 @@ void taskSerial(void *param)
                                 if (rx_data[i] != 0)
                                     led[i].setColor((eLedColor)rx_data[i]);
                         break;
-                        case 0xB5:
+                        case 0xD1:
                             memcpy(&x,rx_data + 2, 4);
-                            memcpy(&y,rx_data + 6, 4);
-                            delivery.setUnitConvert(x,z);
-                        motor.setUnitConvert(y);
+                            axis_x.setUnitConvert(x);
+                        case 0xD2:
+                            memcpy(&z,rx_data + 2, 4);
+                            axis_z.setUnitConvert(z);
                         break;
-                        case 0xB6:
+                        case 0xD3:
                             memcpy(&x,rx_data + 2, 4);
                             motor.setUnitConvert(y);
                         break;
@@ -124,11 +125,18 @@ void taskSerial(void *param)
         }
         Serial.flush();
 
-        delivery.send();
-        motor.send();
+        uint8_t tx_data[10];
+        tx_data[0] = 0xAA;
+        tx_data[1] = 0xC1;
+        tx_data[2] = !(axis_x.getReach() && axis_z.getReach() && motor.getReach());
+        tx_data[3] = crc8Check(tx_data,3);
+        tx_data[4] = 0xFF;
+
+        // delivery.send();
+        // motor.send();
         // else if (send_time % 3 == 2)
         //     keySend();
-        send_time++;
+        // send_time++;
         vTaskDelay(20/portTICK_PERIOD_MS);
     }
 }
@@ -138,8 +146,12 @@ void taskDelivery(void *param)
     while(1)
     {
         if(motor.getReach())
-            delivery.update();
-        delivery.updateStatus();
+        {
+            axis_x.update();
+            axis_z.update();
+        }
+        axis_x.updateStatus();
+        axis_z.updateStatus();
         vTaskDelay(20/portTICK_PERIOD_MS);
     }
 }
