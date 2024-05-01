@@ -38,10 +38,18 @@ typedef enum eMotionMode : uint8_t
 
 #define I_NOW_POSITION      0x6064  //当前位置
 #define I_TARGET_POSITION   0x607A  //目标位置
+
 #define I_PROFILE_VELOCITY  0x6081  //轮廓速度
-#define I_END_VELOCITY      0x6082  //终点速度
 #define I_PROFILE_ACCELERATION  0x6083  //轮廓加速度
 #define I_PROFILE_DECELERATION  0x6084  //轮廓减速度
+
+#define I_PROFILE_JERK  0x60A4  //轮廓加加速度
+#define SI_PROFILE_JERK_ACC 0x01 //轮廓加加速度
+#define SI_PROFILE_JERK_DEC 0x02 //轮廓减加速度
+
+#define I_MAX_PROFILE_VELOCITY  0x607F  //最大轮廓速度
+#define I_MAX_PROFILE_ACCELERATION  0x60C5  //最大轮廓加速度
+#define I_MAX_PROFILE_DECELERATION  0x60C6  //最大轮廓减速度
 
 typedef enum eTriggerMode : uint16_t
 {
@@ -68,8 +76,8 @@ typedef enum eZeroMode : uint8_t
 #define I_ZERO_ACCELERATION 0x609A  //回零加速度
 
 #define I_STUCK_CHECK   0x2007  //堵转检测
-#define SI_STUCK_TORQUE 0X13    //堵转转矩检测
-#define SI_STUCK_TIME   0X15    //堵转时间检测
+#define SI_STUCK_TORQUE 0x13    //堵转转矩检测
+#define SI_STUCK_TIME   0x15    //堵转时间检测
 
 #define I_POSITION_CONTROL  0X2005  //位置控制参数
 #define SI_ZERO_TIME_LIMIT  0X1C    //回零时间限制
@@ -97,6 +105,7 @@ private:
     void disableMotor();
     void enableMotor();
 
+    bool clearError();
     bool setZero();
     bool setAbsPosition(int32_t pos, uint32_t vel);
     bool setAbsPosition(int32_t pos);

@@ -20,13 +20,15 @@ class Key(object):
 
 class LoaderController(object):
     def __init__(self, port):
-        self.x_now_pos = 0.0
-        self.z_now_pos = 0.0
+        self.x_input = 0.0
+        self.z_input = 0.0
+        self.y_input = 0.0
 
         self.x_target = 0.0
         self.z_target = 0.0
+        self.y_target = 0.0
 
-        self.is_busy = True;
+        self.is_busy = True
         self.delivery_reach = False
         self.loader_reach = False
 
@@ -122,6 +124,7 @@ class LoaderController(object):
                         print(rx_data[2])
                         if rx_data[2].to_bytes() == b"\x00":
                             self.is_busy = False
+            # print(self.serial.read().decode("utf-8"))
 
                     # if cmd_id == b"\xC1":
                     #     self.x_now_pos = struct.unpack("<f", self.serial.read(4))
@@ -207,12 +210,12 @@ class MainController(object):
         # self.loader.set_delivery_abs_x(100.0)
         # self.loader.set_delivery_abs_x(0.0)
         # self.loader.set_delivery_abs_x(100.0)
-        # self.loader.set_loader_point_y(200.0)
-        # self.loader.set_loader_point_y(-100.0)
+        # self.loader.set_loader_point_y(300.0)
+        # self.loader.set_loader_point_y(0.0)
         # self.loader.set_led_color(self.loader.led)
         # self.loader.reset()
-        # while True:
-        #     self.start_loader(0)
+        while True:
+            self.start_loader(0)
         #     self.start_loader(1)
         #     self.start_loader(2)
         #     self.start_loader(3)

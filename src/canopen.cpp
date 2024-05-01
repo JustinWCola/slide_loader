@@ -13,12 +13,16 @@ uint8_t CANopen::recv_msg_buffer[8]={0};
  */
 bool CANopen::begin(const CanBitRate can_bitrate)
 {
-    if (!CAN.begin(can_bitrate))
+    while (!CAN.begin(can_bitrate))
     {
         Serial.println("CAN init failed");
         return false;
     }
     Serial.println("CAN init ok");
+    sendNmt(0,ResetCommunication);
+    sendNmt(0,ResetNode);
+    sendNmt(0,EnterOperational);
+
     return true;
 }
 
@@ -37,6 +41,8 @@ bool CANopen::read(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t *data
 
     uint8_t *ptr = (uint8_t*)data;
     uint8_t len = recvMsg();
+    if(len == 0)
+        return false;
 
     for (uint8_t i=0; i<4; i++)
     {
@@ -103,6 +109,23 @@ bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data
 }
 
 /**
+ * 发送NMT命令
+ * @param id 节点ID
+ * @param msg 命令字
+ * @return 发送成功
+ */
+bool CANopen::sendNmt(uint8_t id, eNmtMsg msg)
+{
+    send_msg_buffer[0] = msg;
+    send_msg_buffer[1] = id;
+    sendMsg(0x0000,2);
+    if (!recvMsg())
+        return false;
+    else
+        return true;
+}
+
+/**
  * 组成CANopen消息
  * @param type_byte 请求命令符
  * @param index 索引
@@ -119,7 +142,7 @@ void CANopen::formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index)
 
 /**
  * 发送CANopen消息
- * @param id 节点ID
+ * @param id COB-ID
  * @param length 长度
  */
 void CANopen::sendMsg(uint16_t id, uint8_t length)
@@ -130,110 +153,58 @@ void CANopen::sendMsg(uint16_t id, uint8_t length)
 
 /**
  * 接收CANopen消息
- * @return 应答命令符
+ * @return 应答长度/命令符
  */
-uint8_t CANopen::recvMsg() {
-    // wait for message
+uint8_t CANopen::recvMsg()
+{
+    uint8_t len, id;
     uint32_t startTime = millis();
     while(!CAN.available())
         if ((millis()-startTime)>CAN_RECEIVE_TIMEOUT_MS)
             return 0; // time out
-    uint8_t len;
-    uint8_t id;
+
     CanMsg const msg = CAN.read();
-    can_id = msg.getStandardId();
-    id = can_id - SDO_REPLY_ID_BASE;
-    while (!CAN.available())
+    id = msg.getStandardId() - SDO_REPLY_ID_BASE;
+    len = msg.data_length;
+    memcpy(recv_msg_buffer, msg.data, len);
+
+    // Serial.print(F("Id: "));
+    // Serial.println(id,HEX);
+    // Serial.print(F("data: "));
+    // for(int i = 0; i<len; i++)
+    // {
+    //     Serial.print(recv_msg_buffer[i], HEX);
+    //     Serial.print(" ");
+    // }
+
+    // check the type bit, which kind of response it is
+    switch (recv_msg_buffer[0])
     {
-        len = msg.data_length;
-        memcpy(recv_msg_buffer, msg.data, len);
-
-//        Serial.print(F("Id: "));
-//        Serial.println(can_id,HEX);
-//        Serial.print(F("data: "));
-//        for(int i = 0; i<len; i++)
-//        {
-//            Serial.print(recv_msg_buffer[i], HEX);
-//            Serial.print(" ");
-//        }
-
-        // check the type bit, which kind of response it is
-        switch (recv_msg_buffer[0])
-        {
-            // requested readings for 8,16,32-bit data
-            case SDO_RESPONSE_READ_8BIT:
-                return 1;
-            case SDO_RESPONSE_READ_16BIT:
-                return 2;
-            case SDO_RESPONSE_READ_32BIT:
-                return 4;
-                // confirmation of successful write
-            case SDO_RESPONSE_WRITE:
-                return SDO_RESPONSE_WRITE;
-            case SDO_ERROR_CODE: // fall through error
-                return SDO_ERROR_CODE;
-//                Serial.println(F("\nERROR"));
-//                Serial.print(F("Error Message is: "));
-//                for (uint8_t i=0; i<len; i++)
-//                    Serial.print(recv_msg_buffer[i], HEX);
-            case 0:
-                //PDO message
-//                Serial.println(F("\nPDO Msg received"));
-//                Serial.print(F("Message is: "));
-//                for (uint8_t i=0; i<len; i++)
-//                    Serial.print(recv_msg_buffer[i], HEX);
-                break; // maybe another msg is waiting
-            default:
-                break;
-        } // switch type_bit
-    } // while msg received
+        // requested readings for 8,16,32-bit data
+        case SDO_RESPONSE_READ_8BIT:
+            return 1;
+        case SDO_RESPONSE_READ_16BIT:
+            return 2;
+        case SDO_RESPONSE_READ_32BIT:
+            return 4;
+            // confirmation of successful write
+        case SDO_RESPONSE_WRITE:
+            return SDO_RESPONSE_WRITE;
+        case SDO_ERROR: // fall through error
+            return SDO_ERROR;
+                // Serial.println(F("\nERROR"));
+                // Serial.print(F("Error Message is: "));
+                // for (uint8_t i=0; i<len; i++)
+                //     Serial.print(recv_msg_buffer[i], HEX);
+        // case 0:
+        //     // PDO message
+        //     Serial.println(F("\nPDO Msg received"));
+        //     Serial.print(F("Message is: "));
+        //     for (uint8_t i=0; i<len; i++)
+        //         Serial.print(recv_msg_buffer[i], HEX);
+        //     break; // maybe another msg is waiting
+        default:
+            break;
+    } // switch type_bit
     return 0;
-}
-
-/**
- * 切换到操作模式
- * @param id 节点ID
- * @return 设切换成功
- */
-bool CANopen::startOperational(uint8_t id)
-{
-    //进入操作状态指令
-    send_msg_buffer[0] = 0x01; //NMT Msg
-    send_msg_buffer[1] = id;
-    sendMsg(0x0000,2);
-    while (!recvMsg())
-        Serial.println("starting operational");
-    return true;
-}
-
-/**
- * 重置节点
- * @param id 节点ID
- * @return 重置成功
- */
-bool CANopen::resetNode(uint8_t id)
-{
-    //rest application on the node
-    send_msg_buffer[0] = 0x81; //NMT Msg
-    send_msg_buffer[1] = id;
-    sendMsg(0x0000,2);
-    while (!recvMsg())
-        Serial.println("resetting node");
-    return true;
-}
-
-/**
- * 发送SYNC消息
- * @param id 节点ID
- * @return 发送成功
- */
-bool CANopen::sendSyncMsg(uint8_t id)
-{
-    //synchronous CANopen device
-    send_msg_buffer[0] = 0x00; //NMT Msg
-    send_msg_buffer[1] = id;
-    sendMsg(0x0000,2);
-    while (!recvMsg())
-        Serial.println("sending sync msg");
-    return true;
 }

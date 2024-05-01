@@ -42,7 +42,7 @@ public:
     float target_now = 0;           //当前目标值
     float output_now = 0;           //当前输出值
 
-    float ramp_step = 20;           //斜坡步进值（加速度）
+    float ramp_step = 40;           //斜坡步进值（加速度）
 
 private:
     float _kp = 0;                   //比例项系数
@@ -59,6 +59,8 @@ private:
     float _output_max = 10000;       //最大输出值
     float _output_step_max = 10000;  //最大步进输出值
 
+    float _ramp_target = 0;           //斜坡目标值
+    
     float _precision = 0;            //精确度
 
     bool _pid_mode = PID_RAMP;       //PID模式

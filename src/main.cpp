@@ -65,7 +65,7 @@ void setup()
     axis_z.init();
 
     xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    xTaskCreate(taskDelivery, "Delivery", 256, nullptr, 2, nullptr);
     xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
@@ -74,11 +74,11 @@ void setup()
 
 void taskSerial(void *param)
 {
+    static uint32_t send_time = 0;
+    uint8_t rx_data[8] = {0};
+    float x = 0, y = 0, z = 0;
     while(1)
     {
-        static uint32_t send_time = 0;
-        uint8_t rx_data[8] = {0};
-        float x = 0, y = 0, z = 0;
         //协议见README
         if(Serial.available() > 0)
         {
@@ -125,7 +125,6 @@ void taskSerial(void *param)
             }
         }
 
-        Serial.flush();
         static bool busy_now, busy_last;
         busy_now = !(axis_x.getReach() && axis_z.getReach() && motor.getReach());
         if(!busy_now && busy_last)
@@ -136,12 +135,13 @@ void taskSerial(void *param)
             tx_data[2] = 0x00;
             tx_data[3] = crc8Check(tx_data,3);
             tx_data[4] = 0xFF;
+            Serial.flush();
             Serial.write(tx_data,5);
         }
         busy_last = busy_now;
 
         // keySend();
-        // send_time++;
+        send_time++;
         vTaskDelay(20/portTICK_PERIOD_MS);
     }
 }
@@ -150,11 +150,11 @@ void taskDelivery(void *param)
 {
     while(1)
     {
-        if(motor.getReach())
-        {
+        // if(motor.getReach())
+        // {
             axis_x.update();
             axis_z.update();
-        }
+        // }
         axis_x.updateStatus();
         axis_z.updateStatus();
         vTaskDelay(20/portTICK_PERIOD_MS);
@@ -165,12 +165,14 @@ void taskLoader(void *param)
 {
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
+    static uint32_t send_time = 0;
     while(1)
     {
         // if(delivery.getReach())
             motor.update();
         motor.updateStatus();
-        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5));
+        send_time++;
     }
 }
 

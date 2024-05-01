@@ -29,11 +29,16 @@ void Motor::setPower(int power)
         digitalWrite(_ccw_pin, HIGH);
         analogWrite(_pwm_pin, power);
     }
-    else
+    else if (power < 0)
     {
         digitalWrite(_cw_pin, HIGH);
         digitalWrite(_ccw_pin, LOW);
         analogWrite(_pwm_pin, power);
+    }
+    else
+    {
+        digitalWrite(_cw_pin, LOW);
+        digitalWrite(_ccw_pin, LOW);
     }
 }
 
@@ -45,6 +50,7 @@ void Motor::setTarget(float target)
 {
     // _is_reach = false;  //到达标志位只在接收到新指令后清零
     _target_now = target;
+    _is_cmd = true;
 }
 
 
@@ -118,10 +124,15 @@ void Motor::update()
     else
     {
         //更新目标值
-        _pid->setTarget(_target_now / _y_to_mm);
+        if(_is_cmd)
+        {
+            _pid->setTarget(_target_now / _y_to_mm);
+            _is_cmd = false;
+        }
+        // Serial.println(_pid->target_now);
         //PID核心计算并输出
         setPower((int)_pid->calc(_input_now));
-        // print();
+        print();
     }
 }
 

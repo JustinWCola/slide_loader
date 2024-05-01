@@ -10,10 +10,10 @@
  */
 void Servo::init()
 {
-    // setZero();
-
     _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
 
+    // setZero();
+    clearError();
     disableMotor();//切换模式之前要先失能电机
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
     setMotionMode(eMotionMode::PP);//设置为轮廓位置模式
@@ -186,26 +186,30 @@ void Servo::enableMotor()
     Serial.println(_id);
 }
 
+bool Servo::clearError()
+{
+    disableMotor();//故障复位之前要先失能电机
+    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x80);
+    enableMotor();//电机使能
+}
+
 /**
  * 设置电机回零
  * @return 回零完成
  */
 bool Servo::setZero()
 {
-    _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
-
     disableMotor();//切换模式之前要先失能电机
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
     setMotionMode(eMotionMode::HM);//设置为原点回归模式
 
-    // 这些参数需要设置之后给伺服电机下电才会生效，因此不能在这里设置
-    // _can.write(_id, I_POSITION_CONTROL, SI_ZERO_TIME_LIMIT, (uint16_t)50000);
-    // _can.write(_id, I_ZERO_MODE, 0, (uint8_t)eZeroMode::NegativeStuck);
-    // _can.write(_id, I_ZERO_VELOCITY, SI_LOW_VELOCITY, (uint32_t)50000);
-    // _can.write(_id, I_ZERO_ACCELERATION, 0, (uint32_t)409600);
-    //
-    // _can.write(_id, I_STUCK_CHECK, SI_STUCK_TORQUE, (uint16_t)500);
-    // _can.write(_id, I_STUCK_CHECK, SI_STUCK_TIME, (uint16_t)10);
+    _can.write(_id, I_POSITION_CONTROL, SI_ZERO_TIME_LIMIT, (uint16_t)50000);
+    _can.write(_id, I_ZERO_MODE, 0, (uint8_t)eZeroMode::NegativeStuck);
+    _can.write(_id, I_ZERO_VELOCITY, SI_LOW_VELOCITY, (uint32_t)50000);
+    _can.write(_id, I_ZERO_ACCELERATION, 0, (uint32_t)409600);
+
+    _can.write(_id, I_STUCK_CHECK, SI_STUCK_TORQUE, (uint16_t)500);
+    _can.write(_id, I_STUCK_CHECK, SI_STUCK_TIME, (uint16_t)10);
 
     setMotorReady();//电机准备
     disableMotor();//电机失能
@@ -258,6 +262,15 @@ bool Servo::setAbsPosition(int32_t pos, uint32_t vel)
 bool Servo::setAbsPosition(int32_t pos)
 {
     _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
+
+    // _can.write(_id,I_MAX_PROFILE_VELOCITY,0,(uint32_t)300000000);
+    // _can.write(_id,I_MAX_PROFILE_ACCELERATION,0,(uint32_t)1000000000);
+    // _can.write(_id,I_MAX_PROFILE_DECELERATION,0,(uint32_t)1000000000);
+    // _can.write(_id,I_PROFILE_VELOCITY,0,(uint32_t)300000000);
+    // _can.write(_id,I_PROFILE_ACCELERATION,0,(uint32_t)1000000000);
+    // _can.write(_id,I_PROFILE_DECELERATION,0,(uint32_t)1000000000);
+    // _can.write(_id,I_PROFILE_JERK,SI_PROFILE_JERK_ACC,(uint32_t)500000);
+    // _can.write(_id,I_PROFILE_JERK,SI_PROFILE_JERK_DEC,(uint32_t)500000);
 
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));

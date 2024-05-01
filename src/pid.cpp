@@ -10,14 +10,11 @@
  */
 float Pid::calc(float input)
 {
-    //传递目标与输入值
+    //斜坡函数
+    ramp();
+
+    //传递并计算误差值
     input_now = input;
-
-    //各种优化算法
-    if (_pid_mode == PID_RAMP)
-        ramp();
-
-    //计算误差值
 //    error_prev = error_last;    //位置式PID不需要
     _error_last = _error_now;
     _error_now = target_now - input_now;
@@ -47,37 +44,29 @@ float Pid::calc(float input)
 ///斜坡函数更新目标值
 void Pid::ramp()
 {
-    static bool ramp_flag = false;
-    static float target_last = 0;
-    static float ramp_target = 0;
-
-    if (target_now != target_last)
-        ramp_flag = true;
-    if (ramp_flag)
+    if (_pid_mode == PID_RAMP)
     {
-        ramp_target = target_now;
-        target_now = target_last;
-        if (target_now < ramp_target)
+        if (target_now < _ramp_target)
         {
             target_now += ramp_step;
-            if (target_now >= ramp_target)
-                target_now = ramp_target;
+            if (target_now >= _ramp_target)
+                target_now = _ramp_target;
         }
-        else if (target_now > ramp_target)
+        else if (target_now > _ramp_target)
         {
             target_now -= ramp_step;
-            if (target_now <= ramp_target)
-                target_now = ramp_target;
+            if (target_now <= _ramp_target)
+                target_now = _ramp_target;
         }
         else
-            ramp_flag = false;
+            _pid_mode = PID_NORMAL;
     }
-    target_last = target_now;
 }
 
 float Pid::setTarget(float target)
 {
-    target_now = target;
+    _pid_mode = PID_RAMP;
+    _ramp_target = target;
 }
 
 void Pid::setParam(float p, float i, float d)

@@ -40,6 +40,7 @@ private:
     Pid *_pid;          //PID指针
     Key *_sw;           //限位开关指针
 
+    bool _is_cmd = false;
     bool _is_reach = false;
     bool _is_stuck = false;
     uint8_t _reach_time = 0;
