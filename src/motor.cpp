@@ -43,7 +43,7 @@ void Motor::setPower(int power)
  */
 void Motor::setTarget(float target)
 {
-    _is_reach = false;  //到达标志位只在接收到新指令后清零
+    // _is_reach = false;  //到达标志位只在接收到新指令后清零
     _target_now = target;
 }
 

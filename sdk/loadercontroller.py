@@ -38,18 +38,10 @@ class LoaderController(object):
         self.led = [Color.red, Color.red, Color.red, Color.red]
         # self.set_led_color(self.led)
 
-    def set_delivery_abs_point(self, x, z):
-        self.set_delivery_abs_x(x);
-        self.set_delivery_abs_z(z);
-
-    def set_delivery_rev_point(self, x, z):
-        self.set_delivery_rev_x(x)
-        self.set_delivery_rev_z(z)
-
     def send_cmd_frame(self, cmd_id, data):
         tx_data = b"\xAA" + cmd_id + data
-        crc8 = self.crc8(tx_data).to_bytes()
-        self.serial.write(tx_data + crc8 + b"\xFF")
+        self.serial.flush()
+        self.serial.write(tx_data + self.crc8(tx_data).to_bytes() + b"\xFF")
 
     def wait_busy(self):
         self.is_busy = True
@@ -84,10 +76,18 @@ class LoaderController(object):
         self.z_target += z
         self.update_delivery_z()
 
-    def set_loader_point(self, y):
+    def set_delivery_abs_point(self, x, z):
+        self.set_delivery_abs_x(x)
+        self.set_delivery_abs_z(z)
+
+    def set_delivery_rev_point(self, x, z):
+        self.set_delivery_rev_x(x)
+        self.set_delivery_rev_z(z)
+
+    def set_loader_point_y(self, y):
         self.send_cmd_frame(b"\xB3", struct.pack("<f", y))
-        # self.wait_busy()
-        # print("y reached")
+        self.wait_busy()
+        print("y reached")
 
     def set_led_color(self, led):
         self.send_cmd_frame(b"\xB4", led[0] + led[1] + led[2] + led[3])
@@ -102,18 +102,11 @@ class LoaderController(object):
         self.send_cmd_frame(b"\xD3", struct.pack("<f", y))
 
     def read_msg(self):
-        # byte 0 start 0xA1
+        # byte 0 start 0xAA
         # byte 1 cmd id(delivery/loader/key)
         #
-        # delivery now: 0xC1
-        # byte 2-5 delivery x
-        # byte 6-9 delivery z
-        #
-        # delivery reach: 0xC2
-        # byte 2 reach
-        #
-        # loader reach: 0xC3
-        # byte 2 reach
+        # is busy: 0xC1
+        # byte 2 is busy
         #
         # key: 0xC4
         # byte 2 key0
@@ -121,18 +114,14 @@ class LoaderController(object):
         # byte 4 key2
         # byte 5 key3
         while True:
-            # print(self.is_busy)
-            print(self.serial.read(8).hex())
-            # if self.serial.read() == b"\xAA":
-            #     rx_data = self.serial.read(4)
-            #     # self.crc8.update(bytes(b"\xAA") + bytes(rx_data[0:2]))
-            #     # if self.crc8.crcValue == rx_data[2] and rx_data[3] == b"\xFF":
-            #     cmd_id = rx_data[0].to_bytes()
-            #     if cmd_id == b"\xC1":
-            #         if rx_data[1].to_bytes() == b"\x01":
-            #             self.is_busy = True
-            #         else:
-            #             self.is_busy = False
+            if self.serial.read() == b"\xAA":
+                rx_data = b"\xAA" + self.serial.read(4)
+                if rx_data[3] == self.crc8(rx_data[0:3]) and rx_data[4].to_bytes() == b"\xFF":
+                    cmd_id = rx_data[1].to_bytes()
+                    if cmd_id == b"\xC1":
+                        print(rx_data[2])
+                        if rx_data[2].to_bytes() == b"\x00":
+                            self.is_busy = False
 
                     # if cmd_id == b"\xC1":
                     #     self.x_now_pos = struct.unpack("<f", self.serial.read(4))
@@ -155,20 +144,19 @@ class LoaderController(object):
                     #         elif self.key[i] == Key.released:
                     #             self.led[i] = Color.red
                     #     self.set_led_color(self.led)
-            self.serial.flush()
 
     def take_slide(self, y_push, z_lift):
-        self.set_loader_point(y_push)  # 执行机构伸出
+        self.set_loader_point_y(y_push)  # 执行机构伸出
         self.set_delivery_rev_z(-z_lift)  # 向上
-        self.set_loader_point(-1.0)  # 执行机构收回
+        self.set_loader_point_y(-1.0)  # 执行机构收回
 
     def give_slide(self, y_push, z_lift):
-        self.set_loader_point(y_push)  # 执行机构伸出
+        self.set_loader_point_y(y_push)  # 执行机构伸出
         self.set_delivery_rev_z(z_lift)  # 向下
-        self.set_loader_point(-1.0)  # 执行机构收回
+        self.set_loader_point_y(-1.0)  # 执行机构收回
 
     def reset(self):
-        self.set_loader_point(-1.0)
+        self.set_loader_point_y(-1.0)
         self.set_delivery_abs_point(200.0, 50.0)
         self.loader_reach = False
         self.delivery_reach = False
@@ -219,9 +207,8 @@ class MainController(object):
         # self.loader.set_delivery_abs_x(100.0)
         # self.loader.set_delivery_abs_x(0.0)
         # self.loader.set_delivery_abs_x(100.0)
-        self.loader.set_loader_point(100.0)
-        self.loader.set_loader_point(0.0)
-        self.loader.set_loader_point(100.0)
+        # self.loader.set_loader_point_y(200.0)
+        # self.loader.set_loader_point_y(-100.0)
         # self.loader.set_led_color(self.loader.led)
         # self.loader.reset()
         # while True:

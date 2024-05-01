@@ -59,13 +59,13 @@ void setup()
     // motor.setPower(0);
     delay(3000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    // CANOPEN.begin(CanBitRate::BR_1000k);
-    // //初始化伺服电机
-    // axis_x.init();
-    // axis_z.init();
+    CANOPEN.begin(CanBitRate::BR_1000k);
+    //初始化伺服电机
+    axis_x.init();
+    axis_z.init();
 
     xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    // xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
     xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
@@ -124,22 +124,21 @@ void taskSerial(void *param)
                 }
             }
         }
+
         Serial.flush();
-
-        // static bool busy_now, busy_last;
-        // busy_now = !(axis_x.getReach() && axis_z.getReach() && motor.getReach());
-        // if(!busy_now && busy_last)
-        // {
-        //     uint8_t tx_data[10];
-        //     tx_data[0] = 0xAA;
-        //     tx_data[1] = 0xC1;
-        //     tx_data[2] = 0x00;
-        //     tx_data[3] = crc8Check(tx_data,3);
-        //     tx_data[4] = 0xFF;
-        //     Serial.write(tx_data,5);
-        // }
-        // busy_last = busy_now;
-
+        static bool busy_now, busy_last;
+        busy_now = !(axis_x.getReach() && axis_z.getReach() && motor.getReach());
+        if(!busy_now && busy_last)
+        {
+            uint8_t tx_data[5];
+            tx_data[0] = 0xAA;
+            tx_data[1] = 0xC1;
+            tx_data[2] = 0x00;
+            tx_data[3] = crc8Check(tx_data,3);
+            tx_data[4] = 0xFF;
+            Serial.write(tx_data,5);
+        }
+        busy_last = busy_now;
 
         // keySend();
         // send_time++;
