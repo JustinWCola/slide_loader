@@ -31,16 +31,12 @@ class LoaderController(object):
         self.loader_reach = False
 
         self.serial = serial.Serial(port, 115200, timeout=0.01)
-        self.crc8 = crcmod.predefined.Crc("crc-8")
+        self.crc8 = crcmod.predefined.mkPredefinedCrcFun("crc-8")
 
         self.queue = queue.PriorityQueue()
         self.key = [Key.none, Key.none, Key.none, Key.none]
         self.led = [Color.red, Color.red, Color.red, Color.red]
         # self.set_led_color(self.led)
-
-    def crc8_check_send(self, tx_data):
-        self.crc8.update(bytes(tx_data))
-        self.serial.write(bytes(tx_data) + self.crc8.crcValue.to_bytes() + b"\xFF")
 
     def set_delivery_abs_point(self, x, z):
         self.set_delivery_abs_x(x);
@@ -50,24 +46,26 @@ class LoaderController(object):
         self.set_delivery_rev_x(x)
         self.set_delivery_rev_z(z)
 
-    def update_delivery_x(self):
-        tx_data = b"\xAA" + b"\xB1" + struct.pack("<f", self.x_target)
-        self.crc8_check_send(tx_data)
-        self.is_busy = False
+    def send_cmd_frame(self, cmd_id, data):
+        tx_data = b"\xAA" + cmd_id + data
+        crc8 = self.crc8(tx_data).to_bytes()
+        self.serial.write(tx_data + crc8 + b"\xFF")
+
+    def wait_busy(self):
+        self.is_busy = True
         while self.is_busy:
             time.sleep(0.1)
-            print("waiting for x")
-        self.is_busy = False
+            print("waiting")
+        self.is_busy = True
+
+    def update_delivery_x(self):
+        self.send_cmd_frame(b"\xB1", struct.pack("<f", self.x_target))
+        self.wait_busy()
         print("x reached")
 
     def update_delivery_z(self):
-        tx_data = b"\xAA" + b"\xB2" + struct.pack("<f", self.z_target)
-        self.crc8_check_send(tx_data)
-        self.is_busy = False
-        while self.is_busy:
-            time.sleep(0.1)
-            print("waiting z")
-        self.is_busy = False
+        self.send_cmd_frame(b"\xB2", struct.pack("<f", self.z_target))
+        self.wait_busy()
         print("z reached")
 
     def set_delivery_abs_x(self, x):
@@ -87,30 +85,21 @@ class LoaderController(object):
         self.update_delivery_z()
 
     def set_loader_point(self, y):
-        tx_data = b"\xAA" + b"\xB3" + struct.pack("<ff", y, 0)
-        self.crc8_check_send(tx_data)
-        self.is_busy = False
-        while self.is_busy:
-            time.sleep(0.1)
-            # print("waiting for loader point")
-        self.is_busy = False
-        # print("loader point reached")
+        self.send_cmd_frame(b"\xB3", struct.pack("<f", y))
+        # self.wait_busy()
+        # print("y reached")
 
     def set_led_color(self, led):
-        tx_data = b"\x5A" + b"\xB4" + led[0] + led[1] + led[2] + led[3] + b"\x00" + b"\x00" + b"\x00" + b"\x00"
-        self.crc8_check_send(tx_data)
+        self.send_cmd_frame(b"\xB4", led[0] + led[1] + led[2] + led[3])
 
     def set_delivery_unit_convert_x(self, x):
-        tx_data = b"\xAA" + b"\xD1" + struct.pack("<f", x)
-        self.crc8_check_send(tx_data)
+        self.send_cmd_frame(b"\xD1", struct.pack("<f", x))
 
     def set_delivery_unit_convert_z(self, z):
-        tx_data = b"\xAA" + b"\xD2" + struct.pack("<f", z)
-        self.crc8_check_send(tx_data)
+        self.send_cmd_frame(b"\xD2", struct.pack("<f", z))
 
     def set_loader_unit_convert(self, y):
-        tx_data = b"\xAA" + b"\xD3" + struct.pack("<f", y)
-        self.crc8_check_send(tx_data)
+        self.send_cmd_frame(b"\xD3", struct.pack("<f", y))
 
     def read_msg(self):
         # byte 0 start 0xA1
@@ -133,16 +122,17 @@ class LoaderController(object):
         # byte 5 key3
         while True:
             # print(self.is_busy)
-            print(self.serial.readline().decode("utf-8"))
+            print(self.serial.read(8).hex())
             # if self.serial.read() == b"\xAA":
             #     rx_data = self.serial.read(4)
-            #     self.crc8.update(b"\xAA" + rx_data)
-            #     if self.crc8.crcValue == rx_data[3] and rx_data[4] == b"\xFF":
-            #         cmd_id = rx_data[1]
-            #         if cmd_id == b"\xC1":
-            #             if rx_data[2] == b"\x01":
-            #                 self.is_busy = True
-
+            #     # self.crc8.update(bytes(b"\xAA") + bytes(rx_data[0:2]))
+            #     # if self.crc8.crcValue == rx_data[2] and rx_data[3] == b"\xFF":
+            #     cmd_id = rx_data[0].to_bytes()
+            #     if cmd_id == b"\xC1":
+            #         if rx_data[1].to_bytes() == b"\x01":
+            #             self.is_busy = True
+            #         else:
+            #             self.is_busy = False
 
                     # if cmd_id == b"\xC1":
                     #     self.x_now_pos = struct.unpack("<f", self.serial.read(4))
@@ -223,9 +213,15 @@ class MainController(object):
 
     def select_loader(self):
         # 载玻片仓原点309.5 115.8 伸缩长度5-?? 层间距4
-        self.loader.set_delivery_abs_x(100.0)
-        # self.loader.set_delivery_abs_z(0.0)
-        # self.loader.set_loader_point(0.0)
+        # self.loader.set_delivery_abs_z(120.0)
+        # self.loader.set_delivery_abs_x(100.0)
+        # self.loader.set_delivery_abs_x(0.0)
+        # self.loader.set_delivery_abs_x(100.0)
+        # self.loader.set_delivery_abs_x(0.0)
+        # self.loader.set_delivery_abs_x(100.0)
+        self.loader.set_loader_point(100.0)
+        self.loader.set_loader_point(0.0)
+        self.loader.set_loader_point(100.0)
         # self.loader.set_led_color(self.loader.led)
         # self.loader.reset()
         # while True:

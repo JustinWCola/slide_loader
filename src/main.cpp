@@ -59,13 +59,13 @@ void setup()
     // motor.setPower(0);
     delay(3000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    CANOPEN.begin(CanBitRate::BR_1000k);
-    //初始化伺服电机
-    axis_x.init();
-    axis_z.init();
+    // CANOPEN.begin(CanBitRate::BR_1000k);
+    // //初始化伺服电机
+    // axis_x.init();
+    // axis_z.init();
 
     xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
-    xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
+    // xTaskCreate(taskDelivery, "Delivery", 128, nullptr, 2, nullptr);
     xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
     // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
 
@@ -77,16 +77,15 @@ void taskSerial(void *param)
     while(1)
     {
         static uint32_t send_time = 0;
-        uint8_t rx_data[12] = {0};
+        uint8_t rx_data[8] = {0};
         float x = 0, y = 0, z = 0;
         //协议见README
         if(Serial.available() > 0)
         {
             // 1帧头 + 1命令符 + 4数据 + 1校验 + 1帧尾
-            if(Serial.read() == 0xAA)
+            if(Serial.peek() == 0xAA)
             {
-                rx_data[0] = 0xAA;
-                Serial.readBytes(rx_data + 1,22);
+                Serial.readBytes(rx_data,8);
                 if(rx_data[6] == crc8Check(rx_data,6) && rx_data[7] == 0xFF)
                 {
                     switch (rx_data[1])
@@ -94,48 +93,55 @@ void taskSerial(void *param)
                         case 0xB1:
                             memcpy(&x, rx_data + 2, 4);
                             axis_x.setAbsPos(x);
-                        break;
+                            break;
                         case 0xB2:
                             memcpy(&z, rx_data + 2, 4);
                             axis_z.setAbsPos(z);
-                        break;
+                            break;
                         case 0xB3:
                             memcpy(&y, rx_data + 2, 4);
                             motor.setTarget(y);
-                        break;
+                            break;
                         case 0xB4:
                             for (int i = 2; i < 6; i++)
                                 if (rx_data[i] != 0)
-                                    led[i].setColor((eLedColor)rx_data[i]);
-                        break;
+                                    led[i-2].setColor((eLedColor)rx_data[i]);
+                            break;
                         case 0xD1:
                             memcpy(&x,rx_data + 2, 4);
                             axis_x.setUnitConvert(x);
                         case 0xD2:
                             memcpy(&z,rx_data + 2, 4);
                             axis_z.setUnitConvert(z);
-                        break;
+                            break;
                         case 0xD3:
                             memcpy(&x,rx_data + 2, 4);
                             motor.setUnitConvert(y);
-                        break;
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
         }
         Serial.flush();
 
-        uint8_t tx_data[10];
-        tx_data[0] = 0xAA;
-        tx_data[1] = 0xC1;
-        tx_data[2] = !(axis_x.getReach() && axis_z.getReach() && motor.getReach());
-        tx_data[3] = crc8Check(tx_data,3);
-        tx_data[4] = 0xFF;
+        // static bool busy_now, busy_last;
+        // busy_now = !(axis_x.getReach() && axis_z.getReach() && motor.getReach());
+        // if(!busy_now && busy_last)
+        // {
+        //     uint8_t tx_data[10];
+        //     tx_data[0] = 0xAA;
+        //     tx_data[1] = 0xC1;
+        //     tx_data[2] = 0x00;
+        //     tx_data[3] = crc8Check(tx_data,3);
+        //     tx_data[4] = 0xFF;
+        //     Serial.write(tx_data,5);
+        // }
+        // busy_last = busy_now;
 
-        // delivery.send();
-        // motor.send();
-        // else if (send_time % 3 == 2)
-        //     keySend();
+
+        // keySend();
         // send_time++;
         vTaskDelay(20/portTICK_PERIOD_MS);
     }
