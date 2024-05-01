@@ -190,27 +190,6 @@ bool Motor::getReach()
 }
 
 /**
- * 发送电机到达报文，需要在串口任务循环中调用，注意分时
- */
-void Motor::send()
-{
-    uint8_t tx_data[10] = {0};
-    static bool last_reach;
-
-    //检测到达标志位的上升沿，只在到达后发送一次消息
-    if (_is_reach && !last_reach)
-    {
-        tx_data[0] = 0xAA;
-        tx_data[1] = 0xC3;
-        tx_data[2] = _is_reach;
-        tx_data[3] = crc8Check(tx_data,3);
-        tx_data[4] = 0xFF;
-        Serial.write(tx_data,5);
-    }
-    last_reach = _is_reach;
-}
-
-/**
  * 清除电机信息
  */
 void Motor::clear()

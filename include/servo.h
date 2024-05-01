@@ -96,7 +96,6 @@ public:
     void update();
     void updateStatus();
     bool getReach();
-    void send();
 
 private:
     bool setCtrlMode(eCtrlMode ctrl_mode);
@@ -112,19 +111,19 @@ private:
     int32_t getAbsPosition();
 
 private:
-    uint8_t _id;
-    CANopen _can;
+    uint8_t _id;    //电机ID
+    CANopen _can;   //CAN接口
 
-    float _target_now = 0;
-    float _input_now = 0;
-    float _input_last = 0;
+    float _target_now = 0;  //当前目标
+    float _input_now = 0;   //当前位置
+    float _input_last = 0;  //上次位置
 
-    float _guide;
-    float _pulse = 10000.0f;
-    float _pulse_to_mm = (_guide/_pulse);//编码器位置 -> 实际位置(mm)
+    float _guide;               //导程
+    float _pulse = 10000.0f;    //单圈脉冲数
+    float _pulse_to_mm = (_guide/_pulse);   //编码器位置 -> 实际位置(mm)
 
-    bool _is_reach = false;
-    uint8_t _reach_time = 0;
+    bool _is_reach = false;     //到达标志
+    uint8_t _reach_time = 0;    //到达时间
 };
 
 #endif //SERVO_H
