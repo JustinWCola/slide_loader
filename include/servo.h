@@ -107,9 +107,7 @@ private:
 
     bool clearError();
     bool setZero();
-    bool setAbsPosition(int32_t pos, uint32_t vel);
     bool setAbsPosition(int32_t pos);
-    bool setRevPosition(int32_t pos, uint32_t vel);
     bool setRevPosition(int32_t pos);
     int32_t getAbsPosition();
 

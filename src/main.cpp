@@ -142,7 +142,7 @@ void taskSerial(void *param)
 
         // keySend();
         send_time++;
-        vTaskDelay(20/portTICK_PERIOD_MS);
+        vTaskDelay(5/portTICK_PERIOD_MS);
     }
 }
 
@@ -157,7 +157,7 @@ void taskDelivery(void *param)
         // }
         axis_x.updateStatus();
         axis_z.updateStatus();
-        vTaskDelay(20/portTICK_PERIOD_MS);
+        vTaskDelay(5/portTICK_PERIOD_MS);
     }
 }
 
@@ -181,7 +181,7 @@ void taskKey(void *param)
     while(1)
     {
         keyUpdate();
-        vTaskDelay(50/portTICK_PERIOD_MS);
+        vTaskDelay(5/portTICK_PERIOD_MS);
     }
 }
 
