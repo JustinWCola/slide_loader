@@ -25,7 +25,7 @@ public:
     {}
 
     float calc(float input);
-    float setTarget(float target);
+    void setTarget(float target);
     void setParam(float p, float i, float d);
     void clear();
 

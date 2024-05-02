@@ -41,7 +41,9 @@ float Pid::calc(float input)
     return output_now;
 }
 
-///斜坡函数更新目标值
+/**
+ * 斜坡函数更新目标值
+ */
 void Pid::ramp()
 {
     if (_pid_mode == PID_RAMP)
@@ -63,12 +65,22 @@ void Pid::ramp()
     }
 }
 
-float Pid::setTarget(float target)
+/**
+ * 设置PID目标值
+ * @param target 目标值
+ */
+void Pid::setTarget(float target)
 {
     _pid_mode = PID_RAMP;
     _ramp_target = target;
 }
 
+/**
+ * 设置PID参数
+ * @param p 比例
+ * @param i 积分
+ * @param d 微分
+ */
 void Pid::setParam(float p, float i, float d)
 {
     _kp = p;
@@ -76,6 +88,9 @@ void Pid::setParam(float p, float i, float d)
     _kd = d;
 }
 
+/**
+ * 清除PID
+ */
 void Pid::clear()
 {
     target_now = 0;
