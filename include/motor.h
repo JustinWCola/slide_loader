@@ -42,8 +42,8 @@ private:
     bool _is_cmd = false;
     bool _is_reach = false;
     bool _is_stuck = false;
-    uint8_t _reach_time = 0;
-    uint8_t _stuck_time = 0;
+    uint32_t _reach_time = 0;
+    uint32_t _stuck_time = 0;
 
     float _target_now = 0.0f;
     float _input_now = 0.0f;
