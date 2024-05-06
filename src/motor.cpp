@@ -132,7 +132,7 @@ void Motor::update()
         // Serial.println(_pid->target_now);
         //PID核心计算并输出
         setPower((int)_pid->calc(_input_now));
-        print();
+        // print();
     }
 }
 

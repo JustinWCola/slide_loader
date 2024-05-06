@@ -86,7 +86,7 @@ class LoaderController(object):
         self.set_delivery_rev_x(x)
         self.set_delivery_rev_z(z)
 
-    def set_loader_point_y(self, y):
+    def set_loader_abs_y(self, y):
         self.send_cmd_frame(b"\xB3", struct.pack("<f", y))
         self.wait_busy()
         print("y reached")
@@ -100,7 +100,7 @@ class LoaderController(object):
     def set_delivery_unit_convert_z(self, z):
         self.send_cmd_frame(b"\xD2", struct.pack("<f", z))
 
-    def set_loader_unit_convert(self, y):
+    def set_loader_unit_convert_y(self, y):
         self.send_cmd_frame(b"\xD3", struct.pack("<f", y))
 
     def read_msg(self):
@@ -149,17 +149,17 @@ class LoaderController(object):
                     #     self.set_led_color(self.led)
 
     def take_slide(self, y_push, z_lift):
-        self.set_loader_point_y(y_push)  # 执行机构伸出
+        self.set_loader_abs_y(y_push)  # 执行机构伸出
         self.set_delivery_rev_z(-z_lift)  # 向上
-        self.set_loader_point_y(-1.0)  # 执行机构收回
+        self.set_loader_abs_y(-1.0)  # 执行机构收回
 
     def give_slide(self, y_push, z_lift):
-        self.set_loader_point_y(y_push)  # 执行机构伸出
+        self.set_loader_abs_y(y_push)  # 执行机构伸出
         self.set_delivery_rev_z(z_lift)  # 向下
-        self.set_loader_point_y(-1.0)  # 执行机构收回
+        self.set_loader_abs_y(-1.0)  # 执行机构收回
 
     def reset(self):
-        self.set_loader_point_y(-1.0)
+        self.set_loader_abs_y(-1.0)
         self.set_delivery_abs_point(200.0, 50.0)
         self.loader_reach = False
         self.delivery_reach = False
@@ -203,28 +203,11 @@ class MainController(object):
         # self.loader.set_led_color(self.loader.led)
 
     def select_loader(self):
-        # 载玻片仓原点309.5 115.8 伸缩长度5-?? 层间距4
-        # self.loader.set_delivery_abs_z(120.0)
-        # self.loader.set_delivery_abs_x(100.0)
-        # self.loader.set_delivery_abs_x(0.0)
-        # self.loader.set_delivery_abs_x(100.0)
-        # self.loader.set_delivery_abs_x(0.0)
-        # self.loader.set_delivery_abs_x(100.0)
-        # self.loader.set_loader_point_y(300.0)
-        # self.loader.set_loader_point_y(0.0)
-        # self.loader.set_led_color(self.loader.led)
-        # self.loader.reset()
         while True:
             self.start_loader(0)
         #     self.start_loader(1)
         #     self.start_loader(2)
         #     self.start_loader(3)
-        # while True:
-        # self.loader.set_delivery_abs_point(309.5, 115.8)
-        #     self.loader.take_slide(self.y_push_start, self.z_lift)
-        #     # # # # 显微镜原点6 108.85
-        # self.loader.set_delivery_abs_point(6, 108.85)
-        #     self.loader.give_slide(self.y_push_end, self.z_lift)
 
         time.sleep(1)
         # while True:

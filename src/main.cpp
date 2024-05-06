@@ -36,12 +36,12 @@ void encoderUpdate()
 
 void setup()
 {
-//    //初始化LED
-//    for(auto &led: led)
-//        led.init();
-//    //初始化按键
-//    for(auto &key: key)
-//        key.init();
+    //初始化LED
+    for(auto &led: led)
+        led.init();
+    //初始化按键
+    for(auto &key: key)
+        key.init();
     //初始化串口, Serial: USB
     Serial.begin(115200);
     delay(1000);
@@ -59,15 +59,15 @@ void setup()
     // motor.setPower(0);
     delay(3000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    CANOPEN.begin(CanBitRate::BR_1000k);
-    //初始化伺服电机
-    axis_x.init();
-    axis_z.init();
+    // CANOPEN.begin(CanBitRate::BR_1000k);
+    // //初始化伺服电机
+    // axis_x.init();
+    // axis_z.init();
 
     xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
     xTaskCreate(taskDelivery, "Delivery", 256, nullptr, 2, nullptr);
     xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
-    // xTaskCreate(TaskKey, "Key", 128, nullptr, 2, nullptr);
+    // xTaskCreate(taskKey, "Key", 128, nullptr, 2, nullptr);
 
     vTaskStartScheduler();
 }
@@ -150,11 +150,8 @@ void taskDelivery(void *param)
 {
     while(1)
     {
-        // if(motor.getReach())
-        // {
-            axis_x.update();
-            axis_z.update();
-        // }
+        axis_x.update();
+        axis_z.update();
         axis_x.updateStatus();
         axis_z.updateStatus();
         vTaskDelay(5/portTICK_PERIOD_MS);
@@ -168,8 +165,7 @@ void taskLoader(void *param)
     static uint32_t send_time = 0;
     while(1)
     {
-        // if(delivery.getReach())
-            motor.update();
+        motor.update();
         motor.updateStatus();
         vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(5));
         send_time++;

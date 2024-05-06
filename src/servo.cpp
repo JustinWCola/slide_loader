@@ -162,6 +162,7 @@ bool Servo::clearError()
     disableMotor();//故障复位之前要先失能电机
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x80);
     enableMotor();//电机使能
+    return true;
 }
 
 /**

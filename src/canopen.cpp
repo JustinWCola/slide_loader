@@ -19,9 +19,9 @@ bool CANopen::begin(const CanBitRate can_bitrate)
         return false;
     }
     Serial.println("CAN init ok");
-    while(sendNmt(0,ResetCommunication)){}
-    while(sendNmt(0,ResetNode)){}
-    while(sendNmt(0,EnterOperational)){}
+    // sendNmt(0,ResetCommunication);
+    // sendNmt(0,ResetNode);
+    // sendNmt(0,EnterOperational);
 
     return true;
 }
