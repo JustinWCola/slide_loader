@@ -32,8 +32,8 @@ void Servo::init()
     // _can.read(_id,0x1018,0x02,&data);
 
     // _can.sendNmt(_id, EnterOperational);//进入操作状态
-    // setZero();
     clearError();
+    setZero();
     disableMotor();//切换模式之前要先失能电机
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
     setMotionMode(eMotionMode::PP);//设置为轮廓位置模式
@@ -84,7 +84,7 @@ void Servo::updateStatus()
 {
     _input_now = (float)getAbsPosition() * _pulse_to_mm;
 
-    if(abs(_input_now - _target_now) < 0.1f)
+    if(abs(_input_now - _target_now) < 0.01f)
     {
         //计时到达时间，消抖20*10=200ms
         if(_reach_time > 20)
@@ -189,7 +189,8 @@ void Servo::enableMotor()
 bool Servo::clearError()
 {
     disableMotor();//故障复位之前要先失能电机
-    _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x80);
+    for(int i = 0; i < 20; i++)
+        _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x80);
     enableMotor();//电机使能
     return true;
 }

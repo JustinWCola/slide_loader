@@ -166,17 +166,18 @@ class MainController(object):
     def __init__(self, loader_controller):
         self.loader = loader_controller
 
-        self.x_start = 160  # 载玻片仓X原点
-        self.z_start = 115.8  # 载玻片仓Z原点
+        # 310.3
+        self.x_start = 160.3  # 载玻片仓X原点
+        self.z_start = 120.5  # 载玻片仓Z原点
 
         self.x_gap = 50.0  # 载玻片仓X间隔
         self.z_gap = 4.0  # 载玻片仓Z间隔
 
-        self.x_end = 6.0  # 载物台X位置
-        self.z_end = 108.85  # 载物台Z位置
+        self.x_end = 31.0  # 载物台X位置
+        self.z_end = 113.0  # 载物台Z位置
 
-        self.y_push_start = 410.0  # 载玻片仓推杆行程
-        self.y_push_end = 410.0  # 显微镜推杆行程
+        self.y_push_start = 500.0  # 载玻片仓推杆行程
+        self.y_push_end = 500.0  # 显微镜推杆行程
         self.z_lift = 4.0  # 抬升行程
 
     def start_loader(self, num):
@@ -192,21 +193,25 @@ class MainController(object):
             time.sleep(1)
             self.loader.take_slide(self.y_push_end, self.z_lift)  # 从载物台取出
             self.loader.set_delivery_abs_point(self.x_start + self.x_gap * num,
-                                               self.z_start - self.z_gap * (i - 1))  # 移到下层
+                                               self.z_start - self.z_lift - self.z_gap * i)  # 移到下层
             self.loader.give_slide(self.y_push_start, self.z_lift)  # 放入装载仓
             self.loader.set_delivery_abs_point(self.x_start + self.x_gap * num,
                                                self.z_start - self.z_gap * (i + 1))  # 移到上层
+        self.loader.set_loader_abs_y(400.0)  # 将最后一片推出
+        self.loader.set_loader_abs_y(-1.0)
         self.loader.led[num] = Color.green  # 完成装载，亮绿灯
         self.loader.set_led_color(self.loader.led[0:4])
 
     def select_loader(self):
-        self.loader.set_loader_abs_y(-1.0)
-        # self.loader.set_delivery_abs_x(310.8)
-        # self.loader.set_delivery_abs_z(117.5)
-        self.loader.set_delivery_abs_z(0)
+        self.loader.set_loader_abs_y(-500.0)
+        # self.loader.set_delivery_abs_x(self.x_end)
+        # self.loader.set_delivery_abs_z(self.z_end)
+        # self.loader.set_delivery_abs_z(120.5-100.0-0.2)
+        # self.loader.set_delivery_abs_z(120.5-100.0-0.2)
+        # self.loader.set_delivery_abs_z(0)
         # self.loader.reset()
         # while True:
-        #     self.start_loader(0)
+        #     self.start_loader(3)
         #     self.start_loader(1)
         #     self.start_loader(2)
         #     self.start_loader(3)
