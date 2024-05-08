@@ -25,6 +25,7 @@ public:
     void update();
     void updateStatus();
     bool getReach();
+    float getPos();
 
 private:
     void clear();

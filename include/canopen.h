@@ -51,6 +51,7 @@ public:
     bool write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data);
     bool write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data);
     bool sendNmt(uint8_t id, eNmtMsg msg);
+    void send607060(uint8_t id);
 
 private:
     void formMsg(uint8_t type_byte, uint16_t index, uint8_t sub_index);

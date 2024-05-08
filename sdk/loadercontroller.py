@@ -92,6 +92,7 @@ class LoaderController(object):
         print("y reached")
 
     def set_led_color(self, led):
+        # print(led)
         self.send_cmd_frame(b"\xB4", led[0] + led[1] + led[2] + led[3])
 
     def set_delivery_unit_convert_x(self, x):
@@ -117,36 +118,33 @@ class LoaderController(object):
         # byte 5 key3
         while True:
             if self.serial.read() == b"\xAA":
-                rx_data = b"\xAA" + self.serial.read(4)
-                if rx_data[3] == self.crc8(rx_data[0:3]) and rx_data[4].to_bytes() == b"\xFF":
+                rx_data = b"\xAA" + self.serial.read(7)
+                if rx_data[6] == self.crc8(rx_data[0:6]) and rx_data[7].to_bytes() == b"\xFF":
                     cmd_id = rx_data[1].to_bytes()
-                    if cmd_id == b"\xC1":
+                    if cmd_id == b"\xC0":
                         print(rx_data[2])
                         if rx_data[2].to_bytes() == b"\x00":
                             self.is_busy = False
+                    elif cmd_id == b"\xC1":
+                        self.x_input = struct.unpack("<f", rx_data[2:6])
+                    elif cmd_id == b"\xC2":
+                        self.z_input = struct.unpack("<f", rx_data[2:6])
+                    elif cmd_id == b"\xC3":
+                        self.y_input = struct.unpack("<f", rx_data[2:6])
+                    elif cmd_id == b"\xC4":
+                        self.key = struct.unpack("<cccc", rx_data[2:6])
+                        print(self.key)
+                        for i in range(0, 4):
+                            if self.key[i] == Key.pressed:
+                                if i == 0:
+                                    self.queue.put((1, 0))
+                                else:
+                                    self.queue.put((2, i))
+                                self.led[i] = Color.red
+                            elif self.key[i] == Key.released:
+                                self.led[i] = Color.red
+                        self.set_led_color(self.led[0:4])
             # print(self.serial.read().decode("utf-8"))
-
-                    # if cmd_id == b"\xC1":
-                    #     self.x_now_pos = struct.unpack("<f", self.serial.read(4))
-                    #     self.z_now_pos = struct.unpack("<f", self.serial.read(4))
-                    # elif cmd_id == b"\xC2":
-                    #     if self.serial.read() == b"\x01":
-                    #         self.delivery_reach = True
-                    # elif cmd_id == b"\xC3":
-                    #     if self.serial.read() == b"\x01":
-                    #         self.loader_reach = True
-                    # elif cmd_id == b"\xC4":
-                    #     self.key = struct.unpack("<cccc", self.serial.read(4))
-                    #     for i in range(0, 4):
-                    #         if self.key[i] == Key.pressed:
-                    #             if i == 0:
-                    #                 self.queue.put((1, 0))
-                    #             else:
-                    #                 self.queue.put((2, i))
-                    #             self.led[i] = Color.red
-                    #         elif self.key[i] == Key.released:
-                    #             self.led[i] = Color.red
-                    #     self.set_led_color(self.led)
 
     def take_slide(self, y_push, z_lift):
         self.set_loader_abs_y(y_push)  # 执行机构伸出
@@ -161,18 +159,17 @@ class LoaderController(object):
     def reset(self):
         self.set_loader_abs_y(-1.0)
         self.set_delivery_abs_point(200.0, 50.0)
-        self.loader_reach = False
-        self.delivery_reach = False
+        self.is_busy = False
 
 
 class MainController(object):
     def __init__(self, loader_controller):
         self.loader = loader_controller
 
-        self.x_start = 309.5  # 载玻片仓X原点
+        self.x_start = 160  # 载玻片仓X原点
         self.z_start = 115.8  # 载玻片仓Z原点
 
-        self.x_gap = 75.0  # 载玻片仓X间隔
+        self.x_gap = 50.0  # 载玻片仓X间隔
         self.z_gap = 4.0  # 载玻片仓Z间隔
 
         self.x_end = 6.0  # 载物台X位置
@@ -183,9 +180,9 @@ class MainController(object):
         self.z_lift = 4.0  # 抬升行程
 
     def start_loader(self, num):
-        # self.loader.led[id] = Color.yellow  # 开始装载，亮黄灯
-        # self.loader.set_led_color(self.loader.led)
-        self.loader.set_delivery_abs_point(self.x_start - self.x_gap * num,
+        self.loader.led[num] = Color.yellow  # 开始装载，亮黄灯
+        self.loader.set_led_color(self.loader.led[0:4])
+        self.loader.set_delivery_abs_point(self.x_start + self.x_gap * num,
                                            self.z_start)  # 移到最底层
         for i in range(25):
             self.loader.take_slide(self.y_push_start, self.z_lift)  # 从装载仓取出
@@ -194,25 +191,29 @@ class MainController(object):
             # 等待扫描
             time.sleep(1)
             self.loader.take_slide(self.y_push_end, self.z_lift)  # 从载物台取出
-            self.loader.set_delivery_abs_point(self.x_start - self.x_gap * num,
+            self.loader.set_delivery_abs_point(self.x_start + self.x_gap * num,
                                                self.z_start - self.z_gap * (i - 1))  # 移到下层
             self.loader.give_slide(self.y_push_start, self.z_lift)  # 放入装载仓
-            self.loader.set_delivery_abs_point(self.x_start - self.x_gap * num,
+            self.loader.set_delivery_abs_point(self.x_start + self.x_gap * num,
                                                self.z_start - self.z_gap * (i + 1))  # 移到上层
-        # self.loader.led[id] = Color.green  # 完成装载，亮绿灯
-        # self.loader.set_led_color(self.loader.led)
+        self.loader.led[num] = Color.green  # 完成装载，亮绿灯
+        self.loader.set_led_color(self.loader.led[0:4])
 
     def select_loader(self):
-        while True:
-            self.start_loader(0)
+        self.loader.set_loader_abs_y(-1.0)
+        # self.loader.set_delivery_abs_x(310.8)
+        # self.loader.set_delivery_abs_z(117.5)
+        self.loader.set_delivery_abs_z(0)
+        # self.loader.reset()
+        # while True:
+        #     self.start_loader(0)
         #     self.start_loader(1)
         #     self.start_loader(2)
         #     self.start_loader(3)
-
-        time.sleep(1)
+        #     time.sleep(1)
         # while True:
         #     if not self.loader.queue.empty():
-        #         self.loader.start_loader(self.loader.queue.get()[1])
+        #         self.start_loader(self.loader.queue.get()[1])
 
 
 if __name__ == '__main__':

@@ -27,7 +27,6 @@ void taskDelivery(void *param);
 void taskLoader(void *param);
 void taskKey(void *param);
 void keyUpdate();
-void keySend();
 void encoderUpdate()
 {
     motor_encoder.update();
@@ -54,20 +53,17 @@ void setup()
     motor.init();
     //电机归零
     motor.setZeroInit();
-    // motor.setPower(1);
-    // delay(100);
-    // motor.setPower(0);
     delay(3000);
     //初始化CAN通信, D4(CANTX0) D5(CANRX0)
-    // CANOPEN.begin(CanBitRate::BR_1000k);
-    // //初始化伺服电机
-    // axis_x.init();
-    // axis_z.init();
+    CANOPEN.begin(CanBitRate::BR_1000k);
+    //初始化伺服电机
+    axis_x.init();
+    axis_z.init();
 
     xTaskCreate(taskSerial, "Serial", 1024, nullptr, 2, nullptr);
     xTaskCreate(taskDelivery, "Delivery", 256, nullptr, 2, nullptr);
-    xTaskCreate(taskLoader, "Loader", 256, nullptr, 1, nullptr);
-    // xTaskCreate(taskKey, "Key", 128, nullptr, 2, nullptr);
+    xTaskCreate(taskLoader, "Loader", 128, nullptr, 1, nullptr);
+    xTaskCreate(taskKey, "Key", 128, nullptr, 2, nullptr);
 
     vTaskStartScheduler();
 }
@@ -129,18 +125,68 @@ void taskSerial(void *param)
         busy_now = !(axis_x.getReach() && axis_z.getReach() && motor.getReach());
         if(!busy_now && busy_last)
         {
-            uint8_t tx_data[5];
+            uint8_t tx_data[8];
             tx_data[0] = 0xAA;
-            tx_data[1] = 0xC1;
+            tx_data[1] = 0xC0;
             tx_data[2] = 0x00;
-            tx_data[3] = crc8Check(tx_data,3);
-            tx_data[4] = 0xFF;
+            tx_data[3] = 0x00;
+            tx_data[4] = 0x00;
+            tx_data[5] = 0x00;
+            tx_data[6] = crc8Check(tx_data,6);
+            tx_data[7] = 0xFF;
             Serial.flush();
-            Serial.write(tx_data,5);
+            Serial.write(tx_data,8);
         }
+        else if(isKeyDetected)
+        {
+            uint8_t tx_data[8];
+            tx_data[0] = 0xAA;
+            tx_data[1] = 0xC4;
+            memcpy(tx_data + 2, &keyStatus, 4);
+            tx_data[6] = crc8Check(tx_data,6);
+            tx_data[7] = 0xFF;
+            Serial.flush();
+            Serial.write(tx_data,8);
+            isKeyDetected = false;
+        }
+        // else if(send_time % 300 == 0)
+        // {
+        //     uint8_t tx_data[8];
+        //     float x_pos = axis_x.getAbsPos();
+        //     tx_data[0] = 0xAA;
+        //     tx_data[1] = 0xC1;
+        //     memcpy(tx_data + 2, &x_pos, 4);
+        //     tx_data[6] = crc8Check(tx_data,6);
+        //     tx_data[7] = 0xFF;
+        //     Serial.flush();
+        //     Serial.write(tx_data,8);
+        // }
+        // else if(send_time % 300 == 100)
+        // {
+        //     uint8_t tx_data[8];
+        //     float z_pos = axis_z.getAbsPos();
+        //     tx_data[0] = 0xAA;
+        //     tx_data[1] = 0xC2;
+        //     memcpy(tx_data + 2, &z_pos, 4);
+        //     tx_data[6] = crc8Check(tx_data,6);
+        //     tx_data[7] = 0xFF;
+        //     Serial.flush();
+        //     Serial.write(tx_data,8);
+        // }
+        // else if(send_time % 300 == 200)
+        // {
+        //     uint8_t tx_data[8];
+        //     float y_pos = motor.getPos();
+        //     tx_data[0] = 0xAA;
+        //     tx_data[1] = 0xC3;
+        //     memcpy(tx_data + 2, &y_pos, 4);
+        //     tx_data[6] = crc8Check(tx_data,6);
+        //     tx_data[7] = 0xFF;
+        //     Serial.flush();
+        //     Serial.write(tx_data,8);
+        // }
         busy_last = busy_now;
 
-        // keySend();
         send_time++;
         vTaskDelay(5/portTICK_PERIOD_MS);
     }
@@ -183,13 +229,23 @@ void taskKey(void *param)
 
 void keyUpdate()
 {
-    uint8_t keyPressed[4];
-    uint8_t lastKeyPressed[4];
-    isKeyDetected = false;
+    static uint8_t keyPressed[4];
+    static uint8_t lastKeyPressed[4];
     for(int i=0;i<4;i++)
     {
         lastKeyPressed[i] = keyPressed[i];
-        keyPressed[i] = key[i].getKey();
+        if(key[i].getKey()==HIGH)
+        {
+            delay(10);
+            if(key[i].getKey()==HIGH)
+                keyPressed[i] = HIGH;
+        }
+        if(key[i].getKey()==LOW)
+        {
+            delay(10);
+            if(key[i].getKey()==LOW)
+                keyPressed[i]= LOW;
+        }
         if(keyPressed[i] != lastKeyPressed[i])
         {
             isKeyDetected = true;
@@ -200,18 +256,6 @@ void keyUpdate()
         }
         else
             keyStatus[i] = None;
-    }
-}
-
-void keySend()
-{
-    if(isKeyDetected)
-    {
-        uint8_t tx_data[6];
-        tx_data[0] = 0xA1;
-        tx_data[1] = 0xC4;
-        memcpy(tx_data+2,keyStatus,4);
-        Serial.write(tx_data,6);
     }
 }
 

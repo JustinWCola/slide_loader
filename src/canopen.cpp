@@ -19,9 +19,10 @@ bool CANopen::begin(const CanBitRate can_bitrate)
         return false;
     }
     Serial.println("CAN init ok");
-    // sendNmt(0,ResetCommunication);
-    // sendNmt(0,ResetNode);
-    // sendNmt(0,EnterOperational);
+
+    sendNmt(0,ResetCommunication);
+    sendNmt(0,ResetNode);
+    delay(1000);
 
     return true;
 }
@@ -106,6 +107,16 @@ bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint32_t data
         return true;
     else
         return false;
+}
+
+void CANopen::send607060(uint8_t id)
+{
+    formMsg(0x60,0,0);
+    sendMsg(id + SDO_COMMAND_ID_BASE, 8);
+    formMsg(0x70,0,0);
+    sendMsg(id + SDO_COMMAND_ID_BASE, 8);
+    formMsg(0x60,0,0);
+    sendMsg(id + SDO_COMMAND_ID_BASE, 8);
 }
 
 /**

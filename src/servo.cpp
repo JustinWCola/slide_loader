@@ -10,8 +10,28 @@
  */
 void Servo::init()
 {
-    _can.read(_id, I_DEVICE_TYPE, 0, 0);//你是谁
+    uint32_t data = 0;
+    getInfo();//获取电机信息
+    // _can.sendNmt(_id, EnterPreOperational);//进入预操作状态
+    // _can.read(_id,0x1008,0x00,&data);
+    // _can.send607060(_id);
+    // _can.read(_id,0x2002,0x1F,&data);
+    // _can.read(_id,0x2002,0x1F,&data);
+    // _can.read(_id,0x1018,0x03,&data);
+    // _can.read(_id,0x1018,0x04,&data);
+    // _can.read(_id,0x1018,0x01,&data);
+    // _can.read(_id,0x1018,0x02,&data);
+    // _can.read(_id,0x1018,0x01,&data);
+    // _can.read(_id,0x1008,0x00,&data);
+    // _can.send607060(_id);
+    // _can.read(_id,0x2002,0x1F,&data);
+    // _can.read(_id,0x2002,0x1F,&data);
+    // _can.read(_id,0x1018,0x03,&data);
+    // _can.read(_id,0x1018,0x04,&data);
+    // _can.read(_id,0x1018,0x01,&data);
+    // _can.read(_id,0x1018,0x02,&data);
 
+    // _can.sendNmt(_id, EnterOperational);//进入操作状态
     // setZero();
     clearError();
     disableMotor();//切换模式之前要先失能电机
@@ -23,7 +43,7 @@ void Servo::init()
 }
 
 /**
- * 设置传送机构绝对位置
+ * 设置伺服电机绝对位置
  * @param pos 绝对位置
  */
 void Servo::setAbsPos(float pos)
@@ -32,7 +52,7 @@ void Servo::setAbsPos(float pos)
 }
 
 /**
- * 设置传送机构相对位置
+ * 设置伺服电机相对位置
  * @param pos 相对位置
  */
 void Servo::setRevPos(float pos)
@@ -50,7 +70,7 @@ void Servo::setUnitConvert(float unit)
 }
 
 /**
- * 传送机构更新函数，需要在传送机构任务循环中调用
+ * 伺服电机更新函数，需要在传送机构任务循环中调用
  */
 void Servo::update()
 {
@@ -58,7 +78,7 @@ void Servo::update()
 }
 
 /**
- * 更新传送机构状态
+ * 更新伺服电机状态
  */
 void Servo::updateStatus()
 {
@@ -81,12 +101,21 @@ void Servo::updateStatus()
 }
 
 /**
- * 获取传送机构到达状态
+ * 获取伺服电机到达状态
  * @return 是否达到
  */
 bool Servo::getReach()
 {
     return _is_reach;
+}
+
+/**
+ * 获取伺服电机绝对位置
+ * @return 当前位置
+ */
+float Servo::getAbsPos()
+{
+    return _input_now;
 }
 
 /**
@@ -256,4 +285,13 @@ int32_t Servo::getAbsPosition()
     int32_t position;
     _can.read(_id,I_NOW_POSITION,0,(uint32_t*)&position);
     return position;
+}
+
+/**
+ * 获取电机信息
+ */
+void Servo::getInfo()
+{
+    uint32_t data = 0;
+    _can.read(_id, I_DEVICE_TYPE, 0, &data);//你是谁
 }

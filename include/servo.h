@@ -96,6 +96,7 @@ public:
     void update();
     void updateStatus();
     bool getReach();
+    float getAbsPos();
 
 private:
     bool setCtrlMode(eCtrlMode ctrl_mode);
@@ -109,6 +110,7 @@ private:
     bool setAbsPosition(int32_t pos);
     bool setRevPosition(int32_t pos);
     int32_t getAbsPosition();
+    void getInfo();
 
 private:
     uint8_t _id;    //电机ID

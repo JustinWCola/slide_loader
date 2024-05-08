@@ -189,6 +189,11 @@ bool Motor::getReach()
     return _is_reach;
 }
 
+float Motor::getPos()
+{
+    return _input_now * _y_to_mm;
+}
+
 /**
  * 清除电机信息
  */
