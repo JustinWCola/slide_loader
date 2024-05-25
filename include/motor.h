@@ -26,9 +26,11 @@ public:
     void updateStatus();
     bool getReach();
     float getPos();
+    float get_sw_Pos();
+    // 不准私有，给我公开！o_O
+    void clear();
 
 private:
-    void clear();
     void print();
 
 private:

@@ -12,6 +12,9 @@
 #define I_CTRL_PARAM      0x2002  //控制参数
 #define SI_CTRL_MODE      0x01    //控制模式
 
+// 点个灯玩
+#include <led.h>
+
 typedef enum eCtrlMode : uint16_t
 {
     CiA402 = 0,     //CiA402模式
@@ -88,7 +91,7 @@ class Servo
 public:
     Servo(CANopen& can, uint8_t id, float guide):_can(can),_id(id),_guide(guide){}
 
-    void init();
+    void init(Led* led);
 
     void setAbsPos(float pos);
     void setRevPos(float pos);
@@ -106,7 +109,7 @@ private:
     void enableMotor();
 
     bool clearError();
-    bool setZero();
+    bool setZero(Led* led);
     bool setAbsPosition(int32_t pos);
     bool setRevPosition(int32_t pos);
     int32_t getAbsPosition();

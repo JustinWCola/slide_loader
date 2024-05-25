@@ -18,6 +18,7 @@ void Led::init()
  */
 void Led::setColor(eLedColor color)
 {
+    // 巧妙！红色和绿色，3/4实现了 无/红/绿/黄
     digitalWrite(_rPin,(color&0x01));
     digitalWrite(_gPin,(color&0x10));
 }

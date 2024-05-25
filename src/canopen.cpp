@@ -79,9 +79,13 @@ bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint8_t data)
 
 bool CANopen::write(uint8_t id, uint16_t index, uint8_t sub_index, uint16_t data)
 {
+    // id 60 40 07
+    // _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x07);
+    // 0X2B
     formMsg(SDO_REQUEST_WRITE_16BIT,index,sub_index);
     send_msg_buffer[4] = (uint8_t)data;
     send_msg_buffer[5] = (uint8_t)(data>>8);
+    // SDO_COMMAND_ID_BASE 0x600
     sendMsg(id + SDO_COMMAND_ID_BASE, 4 + 2);
     if(recvMsg() == SDO_RESPONSE_WRITE \
         && recv_msg_buffer[1]==(index&0xFF) \

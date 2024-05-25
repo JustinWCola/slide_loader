@@ -4,42 +4,49 @@
 #include <canopen.h>
 #include <servo.h>
 #include <crc8.h>
+#include <led.h>
 
 /**
  * 初始化函数
  */
-void Servo::init()
+void Servo::init(Led* led)
 {
     uint32_t data = 0;
-    getInfo();//获取电机信息
-    // _can.sendNmt(_id, EnterPreOperational);//进入预操作状态
-    // _can.read(_id,0x1008,0x00,&data);
-    // _can.send607060(_id);
-    // _can.read(_id,0x2002,0x1F,&data);
-    // _can.read(_id,0x2002,0x1F,&data);
-    // _can.read(_id,0x1018,0x03,&data);
-    // _can.read(_id,0x1018,0x04,&data);
-    // _can.read(_id,0x1018,0x01,&data);
-    // _can.read(_id,0x1018,0x02,&data);
-    // _can.read(_id,0x1018,0x01,&data);
-    // _can.read(_id,0x1008,0x00,&data);
-    // _can.send607060(_id);
-    // _can.read(_id,0x2002,0x1F,&data);
-    // _can.read(_id,0x2002,0x1F,&data);
-    // _can.read(_id,0x1018,0x03,&data);
-    // _can.read(_id,0x1018,0x04,&data);
-    // _can.read(_id,0x1018,0x01,&data);
-    // _can.read(_id,0x1018,0x02,&data);
+    bool servo_init_judge=false;
+    
+    Serial.print("begin to init servo");
+    while(servo_init_judge!=true)
+    {
+        // Serial.print("Servo init 0");
+        // id 10 00
+        getInfo();//获取电机信息
 
-    // _can.sendNmt(_id, EnterOperational);//进入操作状态
-    clearError();
-    setZero();
+        // Serial.print("Servo init 1");
+        clearError();
+        
+        // Serial.print("Servo init 2");
+        servo_init_judge=setZero(led);
+    }
+
+    // Serial.print("Servo init 3");
     disableMotor();//切换模式之前要先失能电机
+
+    // Serial.print("Servo init 4");
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
+
+    // Serial.print("Servo init 5");
     setMotionMode(eMotionMode::PP);//设置为轮廓位置模式
+
+    // Serial.print("Servo init 6");
     setMotorReady();//电机准备
+
+    // Serial.print("Servo init 7");
     disableMotor();//电机失能
+
+    // Serial.print("Servo init 8");
     enableMotor();//电机使能
+
+    // Serial.print("Servo init 9");
 }
 
 /**
@@ -122,6 +129,9 @@ float Servo::getAbsPos()
  * 切换控制模式
  * @param ctrl_mode
  * @return true
+ * 
+#define I_CTRL_PARAM      0x2002  //控制参数
+#define SI_CTRL_MODE      0x01    //控制模式
  */
 bool Servo::setCtrlMode(eCtrlMode ctrl_mode)
 {
@@ -168,9 +178,11 @@ void Servo::setMotorReady()
 
 /**
  * 电机失能
+#define I_CONTROL_WORD    0x6040  //控制字
  */
 void Servo::disableMotor()
 {
+    // id 60 40 07
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)0x07);
     Serial.print("motor disable, ID:");
     Serial.println(_id);
@@ -178,6 +190,7 @@ void Servo::disableMotor()
 
 /**
  * 电机使能
+#define I_CONTROL_WORD    0x6040  //控制字
  */
 void Servo::enableMotor()
 {
@@ -199,36 +212,77 @@ bool Servo::clearError()
  * 设置电机回零
  * @return 回零完成
  */
-bool Servo::setZero()
+bool Servo::setZero(Led* led)
 {
+    delay(10);
     disableMotor();//切换模式之前要先失能电机
+    delay(10);
     setCtrlMode(eCtrlMode::CiA402);//设置为CiA402模式
+    delay(10);
     setMotionMode(eMotionMode::HM);//设置为原点回归模式
+    delay(10);
 
     _can.write(_id, I_POSITION_CONTROL, SI_ZERO_TIME_LIMIT, (uint16_t)50000);
+    delay(10);
     _can.write(_id, I_ZERO_MODE, 0, (uint8_t)eZeroMode::NegativeStuck);
+    delay(10);
     _can.write(_id, I_ZERO_VELOCITY, SI_LOW_VELOCITY, (uint32_t)50000);
+    delay(10);
     _can.write(_id, I_ZERO_ACCELERATION, 0, (uint32_t)409600);
+    delay(10);
 
     _can.write(_id, I_STUCK_CHECK, SI_STUCK_TORQUE, (uint16_t)500);
+    delay(10);
     _can.write(_id, I_STUCK_CHECK, SI_STUCK_TIME, (uint16_t)10);
+    delay(10);
 
     setMotorReady();//电机准备
+    delay(10);
     disableMotor();//电机失能
+    delay(10);
     enableMotor();//电机使能
+    delay(10);
 
+    delay(100);
     //触发电机运行
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
+    delay(10);
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
+    delay(10);
 
     //检测回零是否完成，电机状态字的第12位会在回零完成后置1
     volatile uint32_t status = 0;
+    uint8_t servo_init_time=0;
     while((status&(1<<12))>>12 == 0)
     {
         delay(100);
         Serial.print("setting zero, ID:");
         Serial.println(_id);
+        
+        // #define I_STATUS_WORD     0x6041  //状态字
         _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
+        if(servo_init_time%9==0)
+        {
+        led[0].setColor((eLedColor)0x01);
+        }
+        else if(servo_init_time%9==3)
+        {
+        led[0].setColor((eLedColor)0x10);
+        }
+        else if(servo_init_time%9==6)
+        {
+        led[0].setColor((eLedColor)0x11);
+        }
+        // Red = 0x01,
+        // Green = 0x10,
+        // Yellow = 0x11,
+        
+        servo_init_time+=1;
+        if(servo_init_time>=50)
+        {
+            // 超时判断没成功初始化
+            return false;
+        }
     }
 
     return true;
@@ -255,8 +309,9 @@ bool Servo::setAbsPosition(int32_t pos)
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));
 
-//    Serial.print("setting point:");
-//    Serial.print(pos);
+    // Serial.print("setting point:");
+    // Serial.print(pos);
+    // Serial.print("\n");
     return true;
 }
 
@@ -290,9 +345,10 @@ int32_t Servo::getAbsPosition()
 
 /**
  * 获取电机信息
+#define I_DEVICE_TYPE     0x1000  //设备类型
  */
 void Servo::getInfo()
 {
     uint32_t data = 0;
-    _can.read(_id, I_DEVICE_TYPE, 0, &data);//你是谁
+    _can.read(_id, I_DEVICE_TYPE, 0, &data); //你是谁
 }
