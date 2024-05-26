@@ -8,6 +8,7 @@
 #include <Arduino.h>
 
 typedef enum eLedColor : uint8_t{
+    Off = 0x00,
     Red = 0x01,
     Green = 0x10,
     Yellow = 0x11,

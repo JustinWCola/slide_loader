@@ -93,19 +93,19 @@ class LoaderController(object):
         return "going"                  #"正在前往目标位置"
 
     # 若超时/堵塞，返回False(超时时间15秒)
-    # def wait_busy_y(self,busy_time=15)->bool:
-    #     self.is_busy = True
-    #     temp_num=0
-    #     while self.is_busy:
-    #         temp_num+=1
-    #         # 用于处理y轴超时
-    #         if(temp_num>=(busy_time/0.1)):
-    #             return False
-    #             pass
-    #         time.sleep(0.1)
-    #         print("waiting")
-    #     self.is_busy = True
-    #     return True
+    def wait_busy_y(self,busy_time=15)->bool:
+        self.is_busy = True
+        temp_num=0
+        while self.is_busy:
+            temp_num+=1
+            # 用于处理y轴超时
+            if(temp_num>=(busy_time/0.1)):
+                return False
+                pass
+            time.sleep(0.1)
+            print("waiting")
+        self.is_busy = True
+        return True
 
     def update_delivery_x(self):
         self.send_cmd_frame(b"\xB1", struct.pack("<f", self.x_target))
@@ -288,15 +288,17 @@ class MainController(object):
 
 if __name__ == '__main__':
     # 有时Arduino的串口（USB连接）会进入其他状态，无法正常收发。这时拔了重插就好了（USB）
-    loader_control = LoaderController('COM7')
+    loader_control = LoaderController('COM14')
     # main_control = MainController(loader_control)
-    # serial_thread = Thread(target=loader_control.read_msg)
+    serial_thread = Thread(target=loader_control.read_msg)
     # main_thread = Thread(target=main_control.select_loader)
 
-    # serial_thread.start()
+    serial_thread.start()
     # main_thread.start()
-    
-    loader_control.send_cmd_frame(b"\xB1", struct.pack("<f", 160.3+150))
+
+    # loader_control.set_loader_abs_y(0.0)
+    # loader_control.set_delivery_abs_x(200.0)
+    # loader_control.send_cmd_frame(b"\xB1", struct.pack("<f", 160.3+150))
     
 
     # self.x_start = 160.3  # 载玻片仓X原点

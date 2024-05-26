@@ -263,15 +263,15 @@ bool Servo::setZero(Led* led)
         _can.read(_id,I_STATUS_WORD,0,(uint32_t*)&status);
         if(servo_init_time%9==0)
         {
-        led[0].setColor((eLedColor)0x01);
+        led[0].setColor(Red);
         }
         else if(servo_init_time%9==3)
         {
-        led[0].setColor((eLedColor)0x10);
+        led[0].setColor(Green);
         }
         else if(servo_init_time%9==6)
         {
-        led[0].setColor((eLedColor)0x11);
+        led[0].setColor(Yellow);
         }
         // Red = 0x01,
         // Green = 0x10,
@@ -297,14 +297,16 @@ bool Servo::setAbsPosition(int32_t pos)
 {
     _can.write(_id, I_TARGET_POSITION, 0, (uint32_t)pos);
 
-    // _can.write(_id,I_MAX_PROFILE_VELOCITY,0,(uint32_t)300000000);
-    // _can.write(_id,I_MAX_PROFILE_ACCELERATION,0,(uint32_t)1000000000);
-    // _can.write(_id,I_MAX_PROFILE_DECELERATION,0,(uint32_t)1000000000);
-    // _can.write(_id,I_PROFILE_VELOCITY,0,(uint32_t)300000000);
-    // _can.write(_id,I_PROFILE_ACCELERATION,0,(uint32_t)1000000000);
-    // _can.write(_id,I_PROFILE_DECELERATION,0,(uint32_t)1000000000);
-    // _can.write(_id,I_PROFILE_JERK,SI_PROFILE_JERK_ACC,(uint32_t)500000);
-    // _can.write(_id,I_PROFILE_JERK,SI_PROFILE_JERK_DEC,(uint32_t)500000);
+    // 此处修改运行速度，注意各数据的设置值会以其最大值作为上限
+    _can.write(_id,I_MAX_PROFILE_VELOCITY,0,(uint32_t)300000000);
+    _can.write(_id,I_MAX_PROFILE_ACCELERATION,0,(uint32_t)1000000000);
+    _can.write(_id,I_MAX_PROFILE_DECELERATION,0,(uint32_t)1000000000);
+    _can.write(_id,I_PROFILE_VELOCITY,0,(uint32_t)300000000);
+    _can.write(_id,I_PROFILE_ACCELERATION,0,(uint32_t)1000000000);
+    _can.write(_id,I_PROFILE_DECELERATION,0,(uint32_t)1000000000);
+    // 主要修改这两个参数
+    _can.write(_id,I_PROFILE_JERK,SI_PROFILE_JERK_ACC,(uint32_t)10000000);
+    _can.write(_id,I_PROFILE_JERK,SI_PROFILE_JERK_DEC,(uint32_t)10000000);
 
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)eTriggerMode::AbsPos);
     _can.write(_id, I_CONTROL_WORD, 0, (uint16_t)(eTriggerMode::AbsPos + 0x10));

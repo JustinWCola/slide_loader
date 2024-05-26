@@ -124,9 +124,23 @@ void Motor::setUnitConvert(float y)
  */
 void Motor::update()
 {
+    static uint8_t time = 0;
     // 得到编码器脉冲数
     // 获取距离上一次计数差距的脉冲个数
     _input_now = (float)_encoder->getCount();
+
+    // 每次收回之后清空编码器数据，这样就可以消除打滑造成的误差了
+    // 由于两个开关为并联，需要判断是否处于收回阶段，这里通过编码器判断
+    if(_sw->getKey()==HIGH && _input_now < 100)
+    {
+        time++;
+        // 触发限位开关时，继续运动10ms，避免刚接触限位开关的抖动
+        if(time > 2)
+        {
+            time = 0;
+            clear();
+        }
+    }
 
     // //判断是否进行归零
     // if(_target_now < 0)

@@ -90,7 +90,7 @@ void setup()
     axis_z.init(led);
     
     // LED灯复位
-    led[0].setColor((eLedColor)0x00);
+    led[0].setColor(Off);
 
     // 当前位置清零
     motor.clear();
@@ -312,14 +312,24 @@ void taskSerial(void *param)
             Serial.flush();
             Serial.write(tx_data,8);
         }        
-        else if(send_time % 50 == 30)
+        else if(send_time % 50 == 20)
         {
             uint8_t tx_data[8];
             float y_pos = motor.getPos();
             tx_data[0] = 0xAA;
-            if(motor.get_sw_Pos()==0){tx_data[1] = 0xC5;}
-            else{tx_data[1] = 0xC6;}
+            tx_data[1] = 0xC3;
             memcpy(tx_data + 2, &y_pos, 4);
+            tx_data[6] = crc8Check(tx_data,6);
+            tx_data[7] = 0xFF;
+            Serial.flush();
+            Serial.write(tx_data,8);
+        }
+        else if(send_time % 50 == 30)
+        {
+            uint8_t tx_data[8];
+            tx_data[0] = 0xAA;
+            tx_data[1] = 0xC5;
+            tx_data[2] = (int)motor.get_sw_Pos();
             tx_data[6] = crc8Check(tx_data,6);
             tx_data[7] = 0xFF;
             Serial.flush();
