@@ -4,7 +4,7 @@
 1.上位机对应的处理程序
 @File    :   loadercontroller.py
 @Time    :   2024/05/21 20:12:46
-@Author  :   Ma Yuqi
+@Author  :   JustinWCola
 @Version :   1.0
 '''
 
@@ -60,62 +60,97 @@ class LoaderController(object):
         # AA B3 data CRC FF
         tx_data = b"\xAA" + cmd_id + data
         self.serial.flush()
-        # print(str(tx_data) + str(self.crc8(tx_data).to_bytes(1, byteorder = 'big').hex()) + str(b"\xFF"))
-        # print(tx_data.hex(), self.crc8(tx_data).to_bytes(1, byteorder = 'big').hex(), b"\xFF".hex())
-        # self.serial.write(tx_data + self.crc8(tx_data).to_bytes(1, byteorder = 'big') + b"\xFF")
-        self.serial.write(tx_data + self.crc8(tx_data).to_bytes(1, byteorder = 'big') + b"\xFF")
+        self.serial.write(tx_data + self.crc8(tx_data).to_bytes(1, byteorder='big') + b"\xFF")
 
-    def wait_busy(self):
+    def wait_busy(self, local="x"):
         self.is_busy = True
-        temp_busy_time=0
+        temp_busy_time = 0
         while self.is_busy:
             time.sleep(0.1)
-            temp_busy_time+=1
-            print("waiting has been {} s".format(np.round(temp_busy_time/10,1)))
-            if(temp_busy_time%10==0):
-                # 以精度5 mm进行判断
-                temp_judge=self.get_busy_judge(accuracy=5.0)
-            if(temp_busy_time>=100):
-                temp_busy_time=0
+            temp_busy_time += 1
+            if (temp_busy_time % 10 == 0):
+                print("waiting has been {} s".format(np.round(temp_busy_time / 10, 1)))
+                # 以精度5 mm进行判断是否已经到达指定位置，若是则退出循环
+                # x轴和z轴使用该busy函数，用于是否已经到达位置，避免错过busy单脉冲信号
+                if (local == "x"):
+                    self.get_busy_judge_x(accuracy=5.0)
+                elif (local == "z"):
+                    self.get_busy_judge_z(accuracy=5.0)
+                else:
+                    print("error check local x or z")
+            if (temp_busy_time >= 100):
+                temp_busy_time = 0
         self.is_busy = True
 
-    # busy卡死过久，判断是否已经就位
-    def get_busy_judge(self,accuracy=5.0)->int:
-        if(np.abs(self.x_input-self.x_target)<=accuracy):
-            if(np.abs(self.y_input-self.y_target)<=accuracy):
-                if(np.abs(self.z_input-self.z_target)<=accuracy):
-                    # 若当前坐标和指定坐标的三轴误差都小于5mm，则判断就位
-                    # 且限位开关被触发（接触到位），即完全伸出或完全收回
-                    if(self.sw_input==1):
-                        self.is_busy=False
-                        return "reach"  #"到达目标位置"
-                    return "blocking"   #"y轴中途堵转"
-        return "going"                  #"正在前往目标位置"
-
-    # 若超时/堵塞，返回False(超时时间15秒)
-    def wait_busy_y(self,busy_time=15)->bool:
+    def wait_busy_y(self):
         self.is_busy = True
-        temp_num=0
-        while self.is_busy:
-            temp_num+=1
-            # 用于处理y轴超时
-            if(temp_num>=(busy_time/0.1)):
-                return False
-                pass
+        temp_busy_time = 0
+        temp_judge = 0
+        while (self.is_busy) or (temp_judge == 0):
             time.sleep(0.1)
-            print("waiting")
+            temp_busy_time += 1
+            if (temp_busy_time % 10 == 0):
+                # print("waiting has been {} s".format(np.round(temp_busy_time/10,1)))
+                # print("Local y is {}\n And local sw is {}".format(self.y_input,self.sw_input))
+                temp_judge = self.get_busy_judge_y(accuracy=10.0)
+                # 0 移动中
+                if (temp_judge == 0):
+                    pass
+                # 1 移动完成，到达目标位置（自动清除busy位）
+                elif (temp_judge == 1):
+                    pass
+                # -1 中途堵塞，提前返回-1
+                elif (temp_judge == -1):
+                    return -1
+            if (temp_busy_time >= 1000):
+                temp_busy_time = 0
         self.is_busy = True
-        return True
+        return temp_judge
+
+    # 判断x是否到达预定位置
+    def get_busy_judge_z(self, accuracy=5.0) -> int:
+        print("local dz={}\n".format(np.abs(self.z_input - self.z_target)))
+        if (np.abs(self.z_input - self.z_target) <= accuracy):
+            # 若当前坐标和指定坐标的三轴误差都小于5mm，则判断就位
+            self.is_busy = False
+
+    # 判断z是否到达预定位置
+    def get_busy_judge_x(self, accuracy=5.0) -> int:
+        print("local dx={}\n".format(np.abs(self.x_input - self.x_target)))
+        if (np.abs(self.x_input - self.x_target) <= accuracy):
+            # 若当前坐标和指定坐标的三轴误差都小于5mm，则判断就位
+            self.is_busy = False
+
+    # 判断y是否到达预定位置
+    # 0 移动中
+    # -1 移动完毕，堵塞在中途
+    # 1 移动完毕，成功到达目标位置
+    def get_busy_judge_y(self, accuracy=5.0) -> int:
+        # 是否转动了指定圈数
+        print("local dy={}\n".format(np.abs(self.y_input - self.y_target)))
+        if (np.abs(self.y_input - self.y_target) <= accuracy):
+            # 若转动了指定圈数，且触发了限位开关，则成功到达目标位置，并自动退出busy状态
+            if (self.sw_input == 1):
+                self.is_busy = False
+                print("清空标志位")
+                return 1
+            elif (self.sw_input == 0):
+                # 若转动了指定圈数，并没有触发限位开关，则在中途堵塞
+                # 打印堵塞提示
+                print("blocking, please check out error!")
+                return -1
+        else:
+            return 0
 
     def update_delivery_x(self):
         self.send_cmd_frame(b"\xB1", struct.pack("<f", self.x_target))
-        self.wait_busy()
-        print("x reached")
+        self.wait_busy(local="x")
+        print("x reached at {}\n".format(self.x_input))
 
     def update_delivery_z(self):
         self.send_cmd_frame(b"\xB2", struct.pack("<f", self.z_target))
-        self.wait_busy()
-        print("z reached")
+        self.wait_busy(local="z")
+        print("z reached at {}\n".format(self.z_input))
 
     def set_delivery_abs_x(self, x):
         self.x_target = x
@@ -142,10 +177,16 @@ class LoaderController(object):
         self.set_delivery_rev_z(z)
 
     def set_loader_abs_y(self, y):
+        # 赋予目标值为y
+        self.y_target = y
         self.send_cmd_frame(b"\xB3", struct.pack("<f", y))
         # busy_time 判断阈值时间，s
-        temp=self.wait_busy_y(busy_time=15)
-        print("y reached")
+        temp = self.wait_busy_y()
+        print("y reached and state is temp_judge = {}\n".format(temp))
+        # 返回的temp有三个状态
+        # 0     移动中（不会收到这个值）
+        # -1    中途阻塞
+        # 1     到达预定位置
         return temp
 
     def set_led_color(self, led):
@@ -177,22 +218,22 @@ class LoaderController(object):
             if self.serial.read() == b"\xAA":
                 rx_data = b"\xAA" + self.serial.read(7)
                 # 校验通过
-                if rx_data[6] == self.crc8(rx_data[0:6]) and rx_data[7].to_bytes(1, byteorder = 'big') == b"\xFF":
-                    cmd_id = rx_data[1].to_bytes(1, byteorder = 'big')
+                if rx_data[6] == self.crc8(rx_data[0:6]) and rx_data[7].to_bytes(1, byteorder='big') == b"\xFF":
+                    cmd_id = rx_data[1].to_bytes(1, byteorder='big')
                     if cmd_id == b"\xC0":
                         print(rx_data[2])
                         # 执行递出指令后，等待直到接收到非忙碌判断
                         # is_busy
                         # AA C0 00 XX XX XX CRC FF
-                        if rx_data[2].to_bytes(1, byteorder = 'big') == b"\x00":
+                        if rx_data[2].to_bytes(1, byteorder='big') == b"\x00":
                             self.is_busy = False
                     # 获得当前的x,y,z位置
                     elif cmd_id == b"\xC1":
-                        self.x_input = struct.unpack("<f", rx_data[2:6])
+                        self.x_input = struct.unpack("<f", rx_data[2:6])[0]
                     elif cmd_id == b"\xC2":
-                        self.z_input = struct.unpack("<f", rx_data[2:6])
+                        self.z_input = struct.unpack("<f", rx_data[2:6])[0]
                     elif cmd_id == b"\xC3":
-                        self.y_input = struct.unpack("<f", rx_data[2:6])
+                        self.y_input = struct.unpack("<f", rx_data[2:6])[0]
                     elif cmd_id == b"\xC4":
                         self.key = struct.unpack("<cccc", rx_data[2:6])
                         print(self.key)
@@ -206,14 +247,22 @@ class LoaderController(object):
                             elif self.key[i] == Key.released:
                                 self.led[i] = Color.red
                         self.set_led_color(self.led[0:4])
+                        # if(motor.get_sw_Pos()==0){tx_data[1] = 0xC5;}
+                    # else{tx_data[1] = 0xC6;}
+                    # 同时获取sw和y的值，尽可能避免错位
                     elif cmd_id == b"\xC5":
-                        self.sw_input = int(rx_data[2])
+                        self.sw_input = 0
+                        self.y_input = struct.unpack("<f", rx_data[2:6])[0]
+                    elif cmd_id == b"\xC6":
+                        self.sw_input = 1
+                        self.y_input = struct.unpack("<f", rx_data[2:6])[0]
+
             # print(self.serial.read().decode("utf-8"))
 
     def take_slide(self, y_push, z_lift):
-        self.set_loader_abs_y(y_push)       # 执行机构伸出
-        self.set_delivery_rev_z(-z_lift)    # 向上
-        self.set_loader_abs_y(-1.0)         # 执行机构收回
+        self.set_loader_abs_y(y_push)  # 执行机构伸出
+        self.set_delivery_rev_z(-z_lift)  # 向上
+        self.set_loader_abs_y(-1.0)  # 执行机构收回
 
     def give_slide(self, y_push, z_lift):
         self.set_loader_abs_y(y_push)  # 执行机构伸出
@@ -296,26 +345,6 @@ if __name__ == '__main__':
     serial_thread.start()
     # main_thread.start()
 
-    # loader_control.set_loader_abs_y(0.0)
-    loader_control.set_delivery_abs_x(200.0)
+    loader_control.set_loader_abs_y(0.0)
+    # loader_control.set_delivery_abs_x(200.0)
     # loader_control.send_cmd_frame(b"\xB1", struct.pack("<f", 160.3+150))
-    
-
-    # self.x_start = 160.3  # 载玻片仓X原点
-    # self.z_start = 120.5  # 载玻片仓Z原点
-
-    # self.x_gap = 50.0  # 载玻片仓X间隔
-    # self.z_gap = 4.0  # 载玻片仓Z间隔
-
-    # self.x_end = 31.0  # 载物台X位置
-    # self.z_end = 113.0  # 载物台Z位置
-    # 将x轴移动至末端
-    # loader_control.set_delivery_abs_x(x=main_control.x_start)
-    # loader_control.set_delivery_abs_z(x=main_control.z_start)
-
-    # tx_data = b"\xAA" + b"\xB1" + data
-    # serial = serial.Serial("COM7", 115200, timeout=0.01)
-    # serial.flush()
-    # tx_data = b"\xAA" + b"\xB1" + struct.pack("<f", 160.3+150)
-    # serial.flush()
-    # serial.write(tx_data + crcmod.predefined.mkPredefinedCrcFun("crc-8")(tx_data).to_bytes(1, byteorder = 'big') + b"\xFF")

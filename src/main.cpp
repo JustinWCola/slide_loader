@@ -312,24 +312,14 @@ void taskSerial(void *param)
             Serial.flush();
             Serial.write(tx_data,8);
         }        
-        else if(send_time % 50 == 20)
+        else if(send_time % 50 == 30)
         {
             uint8_t tx_data[8];
             float y_pos = motor.getPos();
             tx_data[0] = 0xAA;
-            tx_data[1] = 0xC3;
+            if(motor.get_sw_Pos()==0){tx_data[1] = 0xC5;}
+            else{tx_data[1] = 0xC6;}
             memcpy(tx_data + 2, &y_pos, 4);
-            tx_data[6] = crc8Check(tx_data,6);
-            tx_data[7] = 0xFF;
-            Serial.flush();
-            Serial.write(tx_data,8);
-        }
-        else if(send_time % 50 == 30)
-        {
-            uint8_t tx_data[8];
-            tx_data[0] = 0xAA;
-            tx_data[1] = 0xC5;
-            tx_data[2] = (int)motor.get_sw_Pos();
             tx_data[6] = crc8Check(tx_data,6);
             tx_data[7] = 0xFF;
             Serial.flush();
